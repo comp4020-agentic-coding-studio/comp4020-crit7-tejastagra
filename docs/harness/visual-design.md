@@ -50,8 +50,17 @@ Radius 6.75px on inputs and buttons; **cards are square**.
 - **Functional, not busy.** Each page shows what the user came to do and
   nothing else: no marketing blocks ("What you can do"), no decorative
   hero, no duplicate summaries of what another page already shows. At most
-  two columns (main + side) and never more than one row of stats. When in
-  doubt, leave it out.
+  two columns of content (main + side); a grid of equal boxes may run to
+  three. Never more than one row of stats. When in doubt, leave it out.
+- **Put the rarely-used behind a disclosure.** Forms used once a term
+  (create an offering, course details, add an item, uploads) sit in a
+  `<details>` whose summary looks like a button with a caret, so it reads
+  as clickable. The page shows the current job first: for students, where
+  they stand; for staff, which items need marking or releasing.
+- **One badge language.** A solid grade badge is a released grade; a
+  dashed one is where an in-progress course is tracking. A target is never
+  a badge, always words ("Target HD (80)"). Staff and students use the same
+  words for the same state: "Released" / "Not released".
 - **Centred reading pages.** The About page (the README) is a centred
   column of readable width (~48rem).
 - **No vertical rule** down the page, and no coloured accent bars on any
