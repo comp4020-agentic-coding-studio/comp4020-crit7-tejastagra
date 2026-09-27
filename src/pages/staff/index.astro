@@ -1,0 +1,81 @@
+---
+// A convenor's courses, newest session first, with what's left to do in
+// each: items to release, grades to set.
+import PageHeader from "../../components/PageHeader.astro";
+import OfferingForm from "../../components/staff/OfferingForm.astro";
+import Layout from "../../layouts/Layout.astro";
+import { isDemoAccount, listOfferings } from "../../lib/data";
+import { termLabel } from "../../lib/record";
+import { TERMS } from "../../lib/schema";
+
+const staff = Astro.locals.user!;
+const offerings = listOfferings(staff.id).sort(
+  (a, b) => b.year - a.year || TERMS.indexOf(b.term) - TERMS.indexOf(a.term) || a.code.localeCompare(b.code),
+);
+const sessions = [...new Set(offerings.map((o) => `${o.year}-${o.term}`))].map((key) => {
+  const list = offerings.filter((o) => `${o.year}-${o.term}` === key);
+  return { key, label: termLabel(list[0].term, list[0].year), list };
+});
+---
+
+<Layout title="My courses">
+  <PageHeader title="My courses" lede={`Hi, ${staff.name}. Set up assessment, upload marks, and release results to your students.`} />
+
+  {offerings.length === 0 && <p class="muted">You don't convene any courses yet. Create one below.</p>}
+
+  {
+    sessions.map((s) => (
+      <section aria-labelledby={`s-${s.key}`}>
+        <h2 id={`s-${s.key}`}>{s.label}</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Course</th>
+                <th scope="col" class="num">Students</th>
+                <th scope="col" class="num">Released</th>
+                <th scope="col" class="num">Graded</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.list.map((o) => (
+                <tr>
+                  <td class="course-cell">
+                    <a href={`/staff/offerings/${o.id}/`}>{o.code}</a>
+                    <span>{o.title}</span>
+                  </td>
+                  <td class="num">{o.students}</td>
+                  <td class="num">
+                    {o.released}/{o.items}
+                  </td>
+                  <td class="num">
+                    {o.graded}/{o.students}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="card" id="new-offering" aria-labelledby="new-heading">
+    <details open={offerings.length === 0}>
+      <summary><h2 id="new-heading" style="margin:0;font-size:1.1rem">Create a course offering</h2></summary>
+      <OfferingForm action="/api/staff/offerings" submitLabel="Create offering" idPrefix="new" />
+    </details>
+  </section>
+
+  {
+    isDemoAccount(staff.uniId) && (
+      <section class="card" aria-labelledby="demo-heading">
+        <h2 id="demo-heading">Demo account</h2>
+        <p class="small">Everyone shares the demo accounts. Put the demo data back to how it started any time.</p>
+        <form method="post" action="/api/demo/reset">
+          <button type="submit" class="button-secondary">Reset demo data</button>
+        </form>
+      </section>
+    )
+  }
+</Layout>

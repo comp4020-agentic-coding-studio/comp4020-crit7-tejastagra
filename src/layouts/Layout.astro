@@ -13,14 +13,19 @@ interface Props {
 }
 
 const { title, description = "Your ANU results archive and GPA planner." } = Astro.props;
-const student = Astro.locals.student;
+const user = Astro.locals.user;
 const path = Astro.url.pathname;
 const error = Astro.url.searchParams.get("error");
 const notice = Astro.url.searchParams.get("notice");
 
 // Logged out, the nav is only Log in and About: the lockup is the way home
-// (docs/harness/visual-design.md).
-const links = student
+// (docs/harness/visual-design.md). Staff get their own, shorter nav.
+const links = user?.role === "staff"
+  ? [
+      { href: "/staff/", label: "My courses", current: path.startsWith("/staff") },
+      { href: "/readme/", label: "About", current: path.startsWith("/readme") },
+    ]
+  : user
   ? [
       { href: "/", label: "Dashboard", current: path === "/" },
       { href: "/archive/", label: "Archive", current: path.startsWith("/archive") || path.startsWith("/courses") },
@@ -31,7 +36,7 @@ const links = student
       {
         href: "/login/",
         label: "Log in",
-        current: path.startsWith("/login") || path.startsWith("/register"),
+        current: path.startsWith("/login") || path.startsWith("/register") || path.startsWith("/staff/login"),
       },
       { href: "/readme/", label: "About", current: path.startsWith("/readme") },
     ];
@@ -55,16 +60,16 @@ const links = student
       document.documentElement.classList.add("js");
     </script>
   </head>
-  <body data-signed-in={student ? "" : undefined}>
+  <body data-signed-in={user ? "" : undefined}>
     <header>
       <div class="site-header">
-      <nav class:list={["nav-inner", { "nav-collapsible": student }]} aria-label="Main">
+      <nav class:list={["nav-inner", { "nav-collapsible": user?.role === "student" }]} aria-label="Main">
         <a class="lockup" href="/">
           <Crest />
           <span>ANU<span class="slash">/</span>Grades</span>
         </a>
         {
-          student && (
+          user?.role === "student" && (
             <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="nav-links">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M4 7h16M4 12h16M4 17h16" />
@@ -84,7 +89,7 @@ const links = student
             ))
           }
           {
-            student && (
+            user && (
               <li>
                 <form method="post" action="/api/logout">
                   <button type="submit">Log out</button>
@@ -109,9 +114,9 @@ const links = student
       </footer>
     </div>
     {
-      student && (
+      user && (
         <div class="sync-banner" role="status" hidden>
-          <span>Your grades changed on another device.</span>
+          <span>{user.role === "staff" ? "This course changed in another tab." : "Your results have changed."}</span>
           <button type="button" data-refresh>
             Refresh
           </button>

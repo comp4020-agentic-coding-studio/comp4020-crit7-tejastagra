@@ -1,10 +1,10 @@
 import type { APIRoute } from "astro";
 import { updatePlan } from "../../lib/data";
-import { notifyStudentChanged } from "../../lib/events";
+import { notifyChanged } from "../../lib/events";
 import { number, withMessage } from "../../lib/forms";
 
 export const POST: APIRoute = async ({ request, locals, redirect }) => {
-  const student = locals.student!;
+  const student = locals.user!;
   const form = await request.formData();
   const fail = (message: string) => redirect(withMessage("/planner/", "error", message), 303);
 
@@ -14,6 +14,6 @@ export const POST: APIRoute = async ({ request, locals, redirect }) => {
   if (!degree.ok) return fail(degree.error);
 
   updatePlan(student.id, { targetGpa: target.value, degreeUnits: Math.round(degree.value!) });
-  notifyStudentChanged(student.id);
+  notifyChanged([student.uniId]);
   return redirect(withMessage("/planner/", "notice", "Plan saved."), 303);
 };

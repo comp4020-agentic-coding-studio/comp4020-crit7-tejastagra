@@ -6,16 +6,16 @@ import GradeBadge from "../../components/GradeBadge.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
-import { listCourses } from "../../lib/data";
+import { listStudentCourses } from "../../lib/data";
 import { fmtGpa, fmtPercent, plural } from "../../lib/format";
 import { summarise } from "../../lib/record";
 
-const student = Astro.locals.student!;
-const summary = summarise(student, listCourses(student.id));
+const student = Astro.locals.user!;
+const summary = summarise(student, listStudentCourses(student.uniId));
 ---
 
 <Layout title="Archive">
-  <PageHeader title="Archive" lede="Every course you've taken, newest first. Open a course to see its assessment breakdown." />
+  <PageHeader title="Archive" lede="Every course you've taken, newest first. Open a course to see its released marks and try what-ifs." />
   <dl class="stats">
     <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`${summary.points} points ÷ ${summary.gpaUnits} units`} />
     <Stat label="Courses" value={String(summary.courses.length)} note={plural(summary.semesters.length, "session")} />
@@ -24,10 +24,7 @@ const summary = summarise(student, listCourses(student.id));
     GPA is worked out the ANU way: grade points × units, summed and divided by units, to three decimal places. Fails
     count as units with 0 points; results like WD and CRS don't count at all. <a href="/readme/">How this works</a>
   </p>
-  <p>
-    <a class="button button-secondary" href="/courses/new/">Add a course</a>
-  </p>
-  {summary.semesters.length === 0 && <p class="muted">No courses yet.</p>}
+  {summary.semesters.length === 0 && <p class="muted">No courses yet. They appear here when a convenor enrols you.</p>}
   {
     summary.semesters.map((s) => (
       <section aria-labelledby={`sem-${s.key}`}>

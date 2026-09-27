@@ -3,13 +3,13 @@ import Field from "../../components/Field.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import Layout from "../../layouts/Layout.astro";
 
-if (Astro.locals.student) return Astro.redirect("/", 303);
+if (Astro.locals.user) return Astro.redirect("/", 303);
 ---
 
 <Layout title="Create an account">
   <PageHeader
     title="Create an account"
-    lede="This is a prototype with its own accounts, separate from ANU's. Pick a new password, not your real ANU one."
+    lede="Your uni ID links you to the courses your convenors enrol you in. This is a prototype with its own accounts, so pick a new password, not your real ANU one."
   />
   <section class="card">
     <form method="post" action="/api/register">

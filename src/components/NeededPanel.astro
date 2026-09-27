@@ -1,16 +1,18 @@
 ---
 // "What do I need?" for one course, in plain words
 // (docs/harness/ux-mobile.md). All numbers come from grading/.
-import type { Assessment } from "../lib/data/courses";
+import type { StudentAssessment } from "../lib/data/results";
 import { fmtMark, fmtPercent, neededScore } from "../lib/format";
 import { gradeForMark, type NeededResult } from "../lib/grading";
 import GradeBadge from "./GradeBadge.astro";
 
 interface Props {
   needed: NeededResult;
-  assessments: Assessment[];
+  assessments: StudentAssessment[];
+  /** Heading override, e.g. for a what-if. */
+  heading?: string;
 }
-const { needed, assessments } = Astro.props;
+const { needed, assessments, heading } = Astro.props;
 const { status, target, standing, neededPercent } = needed;
 const targetGrade = gradeForMark(target);
 const remaining = assessments.filter((a) => a.score === null);
@@ -19,7 +21,7 @@ const bestGrade = gradeForMark(standing.maxPossible);
 
 <section class={`card needed status-${status}`} aria-labelledby="needed-heading">
   <h2 id="needed-heading">
-    To finish on {fmtMark(target)} <GradeBadge grade={targetGrade} />
+    {heading ?? `To finish on ${fmtMark(target)}`} <GradeBadge grade={targetGrade} />
   </h2>
   {
     status === "possible" && (

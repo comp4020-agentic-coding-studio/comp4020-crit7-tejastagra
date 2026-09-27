@@ -6,13 +6,13 @@ import GradeBadge from "../../components/GradeBadge.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
-import { listCourses } from "../../lib/data";
+import { listStudentCourses } from "../../lib/data";
 import { fmtGpa, plural } from "../../lib/format";
 import type { GradeMix, PlanResult } from "../../lib/grading";
 import { summarise } from "../../lib/record";
 
-const student = Astro.locals.student!;
-const summary = summarise(student, listCourses(student.id));
+const student = Astro.locals.user!;
+const summary = summarise(student, listStudentCourses(student.uniId));
 const plan = summary.plan;
 
 // translate an average in grade points to the nearest grade words

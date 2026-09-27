@@ -1,17 +1,32 @@
 # ANU Grades
 
-ANU Grades is the results system I wish ANU had. Log in and every course you've
-taken is there, newest session first, with its released grade and the full
-breakdown of assessment marks behind it. Your GPA is worked out exactly the way
-ANU does it. For the courses you're doing now you can set a target and get a
-plain answer to the question every student asks in week 10: "what do I need on
-the final?" And for the degree as a whole you can set a target GPA and see what
-the rest of your units have to average to get there.
+ANU Grades is the results system I wish ANU had. It has two sides.
 
-Try it with the demo student: uni ID `u7654321`, password `demo1234`. That
-account is shared, so use "Reset demo data" on the home page to put it back.
-Login is a mock with its own accounts, not ANU's single sign-on. Don't use your
-real ANU password.
+**Staff** convene course offerings. They set up the assessment items, enrol
+students by uni ID (one at a time or from a class-list CSV), and enter marks
+or upload them from a spreadsheet. Each item stays hidden until they release
+it, and they set final grades (with a "fill from marks" shortcut).
+
+**Students** log in and every course they've been enrolled in is there,
+newest session first, with the released grade and every released mark
+behind it. Their GPA is worked out exactly the way ANU does it. For a course
+still running they can set a target and see what they need on what's left,
+and run a **what-if**: type "72/100 on the final exam" and see the course
+mark, the grade and the new career GPA. Nothing typed into a what-if is
+saved. Students can't change a mark, a grade or a course. Results are
+official, so only the convenor writes them.
+
+Try both sides:
+
+- Student: uni ID `u7654321`, password `demo1234`.
+- Staff (from "Staff login"): uni ID `u1000001`, password `staff1234`. This
+  demo convenor runs every course the demo student has taken, each with a
+  few classmates.
+
+The demo accounts are shared, so either one can "Reset demo data". Login is
+a mock with its own accounts, not ANU's single sign-on. Registering as a
+student claims a uni ID, which a real deployment would get from ANU login
+instead. Don't use your real ANU password.
 
 ## Why this system
 
@@ -62,25 +77,37 @@ every feature works at 360px wide:
 Every form is a plain HTML form, so it still works on bad campus wifi or with
 JavaScript off.
 
-**It talks like a person.** "You need 66 / 100 on the Final exam", not "required
-remaining performance 0.66". When a target is already locked in or out of reach,
+**It talks like a person.** "You need 66 / 100 on the Final exam" and "Your
+career GPA would go from 5.333 to 5.368", not "required remaining
+performance 0.66". When a target is already locked in or out of reach,
 it says that directly. Needed marks are rounded up to the half mark, so hitting
 the number is enough.
 
-**Your data is yours.** Every query is scoped to the logged-in student. A test
-checks that another student's course returns "not found", for reads and for
-writes. If you have the app open on your phone and your laptop, changing a mark
-on one offers a refresh on the other.
+**Results are official, and private.** Only a course's convenor can write its
+marks and grades, and a student only sees marks once they're released. Tests
+check that:
+
+- a student gets refused by every staff endpoint;
+- a student can't see another student's course;
+- a second convenor can't open or delete the first one's course.
+
+Enrolments are keyed by uni ID, the way the university does it, so staff can
+upload marks before a student has ever logged in. When staff release
+something, any open page of an affected student offers a refresh.
 
 ## What's enforced and what's judgement
 
 Enforced by tests in `spec/` (run with `pnpm check`):
 
 - the ANU rules and the needed-mark and planner maths (`grading.test.ts`)
-- the whole flow over HTTP: log in, add a course and marks, set a target, see
-  what's needed, release a grade, plan a GPA, and all of it still there on a
-  fresh load (`flows.test.ts`)
-- per-student data scoping
+- the CSV parsing for class lists and marks, including spreadsheet quirks and
+  line-numbered errors (`csv.test.ts`)
+- the whole flow over HTTP (`flows.test.ts`):
+  1. staff create a course, add items, and enrol a student from a CSV;
+  2. staff upload marks, which stay invisible until release;
+  3. the student sets a target and runs a what-if;
+  4. staff fill the final grade, and the student's GPA counts it.
+- who can write what, for both roles
 - the accessibility floor on every page, logged in or not
 
 The rules the agent building this is held to live in `CLAUDE.md` and
@@ -95,7 +122,8 @@ answer.
 ## What I chose not to build
 
 - Real ANU login.
-- Importing from ISIS or Wattle.
+- Importing from ISIS or Wattle (CSV upload stands in for it).
+- Tutors or multiple convenors per course.
 - Honours grades and pre-1994 results.
 - Hurdle assessments.
 - Scaling predictions.

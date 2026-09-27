@@ -1,8 +1,9 @@
 // The academic record: turns stored courses into what the pages show, by
 // asking the grading core. No database access and no maths of its own
 // beyond grouping and summing inputs for grading/.
-import type { CourseWithAssessments } from "./data/courses";
+import type { StudentCourse } from "./data/results";
 import {
+  applyScenario,
   calculateGpa,
   courseStanding,
   type CourseStanding,
@@ -10,6 +11,7 @@ import {
   exampleGradeMix,
   finalMark,
   type Grade,
+  type GradedUnit,
   type GradeMix,
   gradeForMark,
   gradePoints,
@@ -19,7 +21,7 @@ import {
   planTargetGpa,
   type PlanResult,
 } from "./grading";
-import { type Student, TERMS, type Term } from "./schema";
+import { TERMS, type Term, type User } from "./schema";
 
 export const TERM_LABELS: Record<Term, string> = {
   Summer: "Summer Session",
@@ -39,7 +41,7 @@ function termRank(course: { year: number; term: Term }): number {
 }
 
 export interface CourseView {
-  course: CourseWithAssessments;
+  course: StudentCourse;
   standing: CourseStanding;
   /** The released grade, if ANU has released one. */
   releasedGrade: Grade | null;
@@ -51,7 +53,7 @@ export interface CourseView {
   inProgress: boolean;
 }
 
-export function viewCourse(course: CourseWithAssessments): CourseView {
+export function viewCourse(course: StudentCourse): CourseView {
   const standing = courseStanding(course.assessments);
   const releasedGrade = course.grade && isGrade(course.grade) ? course.grade : null;
   const inProgress = releasedGrade === null;
@@ -129,12 +131,14 @@ export interface AcademicSummary {
   plan: PlanView | null;
   courses: CourseView[];
   semesters: SemesterView[];
+  /** Released, GPA-relevant results: the input to any GPA what-if. */
+  released: GradedUnit[];
 }
 
 const FULL_TIME_LOAD = 24;
 const TYPICAL_COURSE_UNITS = 6;
 
-export function summarise(student: Student, rawCourses: CourseWithAssessments[]): AcademicSummary {
+export function summarise(student: User, rawCourses: StudentCourse[]): AcademicSummary {
   const views = rawCourses.map(viewCourse);
   const released = views.flatMap((v) =>
     v.releasedGrade ? [{ grade: v.releasedGrade, units: v.course.units }] : [],
@@ -200,6 +204,50 @@ export function summarise(student: Student, rawCourses: CourseWithAssessments[])
     plan,
     courses: views,
     semesters: groupBySemester(views),
+    released,
+  };
+}
+
+export interface WhatIfView {
+  /** The hypothetical scores the student typed, by item id. */
+  overrides: Map<number, number>;
+  standing: CourseStanding;
+  /** Final course mark, once every item has a real or hypothetical mark. */
+  mark: number | null;
+  grade: Grade | null;
+  gpaNow: number | null;
+  /** Career GPA with this course finishing on `grade`. */
+  gpaAfter: number | null;
+  /** Still-needed on anything left blank, if the student has a target. */
+  needed: NeededResult | null;
+}
+
+/** Reads "what if" scores from a query string: w<itemId>=<score>. */
+export function readOverrides(params: URLSearchParams): Map<number, number> {
+  const overrides = new Map<number, number>();
+  for (const [key, value] of params) {
+    const id = /^w(\d+)$/.exec(key)?.[1];
+    const score = Number(value.replace(",", "."));
+    if (id && value.trim() !== "" && Number.isFinite(score)) overrides.set(Number(id), score);
+  }
+  return overrides;
+}
+
+/** A what-if for one in-progress course: nothing is stored, it's all
+ *  computed from the released marks plus the hypothetical ones. */
+export function whatIf(course: StudentCourse, overrides: Map<number, number>, released: GradedUnit[]): WhatIfView {
+  const items = applyScenario(course.assessments, overrides);
+  const standing = courseStanding(items);
+  const mark = finalMark(items);
+  const grade = mark === null ? null : gradeForMark(mark);
+  return {
+    overrides,
+    standing,
+    mark,
+    grade,
+    gpaNow: calculateGpa(released).gpa,
+    gpaAfter: grade === null ? null : calculateGpa([...released, { grade, units: course.units }]).gpa,
+    needed: mark === null && course.targetMark !== null ? neededForTarget(items, course.targetMark) : null,
   };
 }
 

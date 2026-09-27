@@ -290,7 +290,6 @@ main {
 .stat {
   background: var(--card);
   border: 1px solid var(--line);
-  border-top: 3px solid var(--gold);
   border-radius: var(--radius);
   padding: 0.7rem 0.9rem;
 }
@@ -313,11 +312,12 @@ main {
   color: var(--muted);
 }
 
+/* boxes are clean, one even border, no accent bars (visual-design.md) */
 .alert {
   border-radius: var(--radius);
   padding: 0.75rem 1rem;
   margin-bottom: 1.25rem;
-  border-left: 4px solid;
+  border: 1px solid;
 }
 .alert-error {
   background: var(--bad-soft);
@@ -487,16 +487,37 @@ tfoot td {
   margin: 0 0 0.5rem;
 }
 
-/* needed-mark panel */
-.needed {
-  border-left: 4px solid var(--gold);
+/* what-if result: a tinted area inside the card, not a separate stripe */
+.scenario {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
 }
-.needed.status-secured {
-  border-left-color: var(--good);
+.scenario h3 {
+  margin-top: 0;
 }
-.needed.status-out-of-reach,
-.needed.status-finished {
-  border-left-color: var(--bad);
+.scenario p:last-child {
+  margin-bottom: 0;
+}
+
+/* released/hidden status on staff pages: words first, colour second */
+.status {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+}
+.status-on {
+  color: var(--good);
+  background: var(--good-soft);
+}
+.status-off {
+  color: var(--grey);
+  background: #efece6;
 }
 .big-number {
   font-size: 2.4rem;
@@ -589,6 +610,22 @@ form {
   font-size: 0.8rem;
   color: var(--muted);
 }
+textarea {
+  min-height: auto;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.95rem;
+}
+input[type="file"] {
+  padding: 0.55rem 0.5rem;
+  font-size: 0.9rem;
+}
+select.compact {
+  width: auto;
+  min-width: 5.5rem;
+}
+td input {
+  min-width: 5rem;
+}
 .row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -596,7 +633,8 @@ form {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: var(--tap);
   padding: 0.5rem 0.7rem;
@@ -610,6 +648,7 @@ select {
 }
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 button:focus-visible,
 a:focus-visible,
 summary:focus-visible {

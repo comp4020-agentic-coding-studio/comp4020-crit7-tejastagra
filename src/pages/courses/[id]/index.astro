@@ -1,27 +1,34 @@
 ---
-// One course: its assessment breakdown, the marks entered so far, a target,
-// and what's needed on the rest to hit it.
-import AssessmentFields from "../../../components/AssessmentFields.astro";
-import CourseForm from "../../../components/CourseForm.astro";
+// One course, as a student sees it: the released result and marks (read
+// only), their own target and what it needs, and a what-if calculator.
+// What-if scores ride in the query string and are never stored
+// (docs/harness/architecture.md).
 import Field from "../../../components/Field.astro";
 import GradeBadge from "../../../components/GradeBadge.astro";
 import NeededPanel from "../../../components/NeededPanel.astro";
 import Layout from "../../../layouts/Layout.astro";
-import { getCourse } from "../../../lib/data";
-import { fmtMark, fmtPercent } from "../../../lib/format";
+import { getStudentCourse, listStudentCourses } from "../../../lib/data";
+import { fmtGpa, fmtMark, fmtPercent } from "../../../lib/format";
 import { GRADE_NAMES, GRADE_THRESHOLDS, gradeForMark, percentage } from "../../../lib/grading";
-import { pointsLabel, termLabel, viewCourse } from "../../../lib/record";
+import { pointsLabel, readOverrides, summarise, termLabel, viewCourse, whatIf } from "../../../lib/record";
 
-const student = Astro.locals.student!;
-const course = getCourse(student.id, Number(Astro.params.id));
+const student = Astro.locals.user!;
+const course = getStudentCourse(student.uniId, Number(Astro.params.id));
 if (!course) return new Response("Course not found", { status: 404 });
 
 const view = viewCourse(course);
 const { standing, releasedGrade, trackingGrade, needed } = view;
-const base = `/api/courses/${course.id}`;
 const lost = standing.weightMarked - standing.secured;
 const presets = Object.entries(GRADE_THRESHOLDS) as [keyof typeof GRADE_THRESHOLDS, number][];
 const isPreset = presets.some(([, m]) => m === course.targetMark);
+
+// what-if: only for a course still in progress, on items without a released mark
+const open = course.assessments.filter((a) => a.score === null);
+const canWhatIf = !releasedGrade && open.length > 0;
+const overrides = readOverrides(Astro.url.searchParams);
+const summary = summarise(student, listStudentCourses(student.uniId));
+const scenario = canWhatIf && overrides.size > 0 ? whatIf(course, overrides, summary.released) : null;
+const self = `/courses/${course.id}/`;
 ---
 
 <Layout title={`${course.code} ${course.title}`}>
@@ -31,9 +38,7 @@ const isPreset = presets.some(([, m]) => m === course.targetMark);
   <p class="muted small">{termLabel(course.term, course.year)} · {course.units} units</p>
 
   <section class="card" aria-labelledby="result-heading">
-    <h2 id="result-heading">
-      {releasedGrade ? "Released result" : "Where you're at"}
-    </h2>
+    <h2 id="result-heading">{releasedGrade ? "Your result" : "Where you're at"}</h2>
     {
       releasedGrade && (
         <p>
@@ -45,43 +50,176 @@ const isPreset = presets.some(([, m]) => m === course.targetMark);
       !releasedGrade && trackingGrade && standing.averageSoFar !== null && (
         <p>
           <GradeBadge grade={trackingGrade} tracking /> You're averaging <strong>{fmtPercent(standing.averageSoFar)}</strong>{" "}
-          on the {fmtPercent(standing.weightMarked)} of the course marked so far.
+          on the {fmtPercent(standing.weightMarked)} of the course released so far.
         </p>
       )
     }
-    {!releasedGrade && standing.averageSoFar === null && <p class="muted">Nothing marked yet.</p>}
+    {!releasedGrade && standing.averageSoFar === null && <p class="muted">No marks released yet.</p>}
     {
       standing.totalWeight > 0 && (
         <>
-          <div class="progress" role="img" aria-label={`${fmtMark(standing.secured)} marks banked, ${fmtMark(lost)} lost, ${fmtMark(standing.weightRemaining)} still to come`}>
+          <div
+            class="progress"
+            role="img"
+            aria-label={`${fmtMark(standing.secured)} marks banked, ${fmtMark(lost)} lost, ${fmtMark(standing.weightRemaining)} still to come`}
+          >
             <span class="secured" style={`width:${standing.secured}%`} />
             <span class="remaining" style={`left:${standing.weightMarked}%;width:${standing.weightRemaining}%`} />
           </div>
           <ul class="legend">
             <li><i style="background:var(--good)" />{fmtMark(standing.secured)} banked</li>
-            <li><i style="background:#ececf1;border:1px solid #ccc" />{fmtMark(lost)} lost</li>
-            <li><i style="background:#d8d8e0" />{fmtMark(standing.weightRemaining)} to come</li>
+            <li><i style="background:#ebe6dc;border:1px solid #ccc" />{fmtMark(lost)} lost</li>
+            <li><i style="background:#d6cfc2" />{fmtMark(standing.weightRemaining)} to come</li>
           </ul>
         </>
       )
     }
     {
-      releasedGrade && view.mark !== null && gradeForMark(view.mark) !== releasedGrade && ["HD", "D", "CR", "P", "N"].includes(releasedGrade) && (
-        <p class="muted small" style="margin-top:0.5rem">
-          Your assessment marks add up to {fmtMark(view.mark)} ({gradeForMark(view.mark)}), but the released grade is{" "}
-          {releasedGrade}. Final marks are often scaled; the released grade is the one that counts.
-        </p>
+      releasedGrade && view.mark !== null && gradeForMark(view.mark) !== releasedGrade &&
+        ["HD", "D", "CR", "P", "N"].includes(releasedGrade) && (
+          <p class="muted small" style="margin-top:0.5rem">
+            Your assessment marks add up to {fmtMark(view.mark)} ({gradeForMark(view.mark)}), but your released grade is{" "}
+            {releasedGrade}. Final marks are often scaled; the released grade is the one that counts.
+          </p>
+        )
+    }
+  </section>
+
+  <section id="assessments" aria-labelledby="assessments-heading">
+    <h2 id="assessments-heading">Assessment</h2>
+    {course.assessments.length === 0 && <p class="muted">Your convenor hasn't set up the assessment yet.</p>}
+    {
+      course.assessments.length > 0 && (
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Item</th>
+                <th scope="col" class="num">Weight</th>
+                <th scope="col" class="num">Your mark</th>
+              </tr>
+            </thead>
+            <tbody>
+              {course.assessments.map((a) => (
+                <tr>
+                  <td>{a.name}</td>
+                  <td class="num">{fmtMark(a.weight)}%</td>
+                  <td class="num">
+                    {a.score !== null ? (
+                      <>
+                        <strong>
+                          {fmtMark(a.score)} / {fmtMark(a.outOf)}
+                        </strong>
+                        <span class="muted small" style="display:block">
+                          {fmtPercent(percentage(a.score, a.outOf))}
+                        </span>
+                      </>
+                    ) : (
+                      <span class="muted small">{a.released ? "No mark" : "Not released"}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )
     }
   </section>
 
   {
+    canWhatIf && (
+      <section class="card" id="what-if" aria-labelledby="whatif-heading">
+        <h2 id="whatif-heading">What if?</h2>
+        <p class="muted small">
+          Try marks for what's still to come and see where you'd land. Nothing here is saved or sent to your convenor.
+        </p>
+        <form method="get" action={`${self}#what-if`}>
+          {open.map((a) => (
+            <Field
+              id={`w-${a.id}`}
+              label={`${a.name} (${fmtMark(a.weight)}%), out of ${fmtMark(a.outOf)}`}
+              name={`w${a.id}`}
+              type="number"
+              inputmode="decimal"
+              step="any"
+              min="0"
+              max={String(a.outOf)}
+              placeholder={`0 – ${fmtMark(a.outOf)}`}
+              value={overrides.has(a.id) ? String(overrides.get(a.id)) : undefined}
+            />
+          ))}
+          <div class="actions">
+            <button type="submit">Work it out</button>
+            {scenario && (
+              <a class="button button-secondary" href={`${self}#what-if`}>
+                Clear
+              </a>
+            )}
+          </div>
+        </form>
+
+        {scenario && (
+          <div class="scenario" role="status">
+            <h3>With those marks</h3>
+            {scenario.mark !== null && scenario.grade !== null ? (
+              <>
+                <p>
+                  You'd finish on <strong>{fmtMark(scenario.mark)}</strong> <GradeBadge grade={scenario.grade} />{" "}
+                  {GRADE_NAMES[scenario.grade]}.
+                </p>
+                <p>
+                  Your career GPA would go from <strong>{fmtGpa(scenario.gpaNow)}</strong> to{" "}
+                  <strong>{fmtGpa(scenario.gpaAfter)}</strong>
+                  {scenario.gpaNow !== null && scenario.gpaAfter !== null && (
+                    <>
+                      {" "}
+                      (
+                      {scenario.gpaAfter >= scenario.gpaNow
+                        ? `up ${(scenario.gpaAfter - scenario.gpaNow).toFixed(3)}`
+                        : `down ${(scenario.gpaNow - scenario.gpaAfter).toFixed(3)}`}
+                      )
+                    </>
+                  )}
+                  .
+                </p>
+                {course.targetMark !== null && (
+                  <p class="small">
+                    {scenario.mark >= course.targetMark
+                      ? `That meets your target of ${fmtMark(course.targetMark)}.`
+                      : `That's ${fmtMark(course.targetMark - scenario.mark)} short of your target of ${fmtMark(course.targetMark)}.`}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p>
+                  You'd have <strong>{fmtMark(scenario.standing.secured)}</strong> marks banked, averaging{" "}
+                  {fmtPercent(scenario.standing.averageSoFar ?? 0)}, with {fmtPercent(scenario.standing.weightRemaining)}{" "}
+                  of the course still to come.
+                </p>
+                {scenario.needed?.status === "possible" && (
+                  <p>
+                    To reach your target of {fmtMark(scenario.needed.target)} you'd then need{" "}
+                    <strong>{fmtPercent(scenario.needed.neededPercent!)}</strong> on the rest.
+                  </p>
+                )}
+                {scenario.needed?.status === "secured" && <p>That would lock in your target.</p>}
+                {scenario.needed?.status === "out-of-reach" && <p>Your target would be out of reach.</p>}
+                <p class="muted small">Fill in every item to see your final grade and GPA.</p>
+              </>
+            )}
+          </div>
+        )}
+      </section>
+    )
+  }
+
+  {
     !releasedGrade && (
       <section class="card" id="target" aria-labelledby="target-heading">
-        <h2 id="target-heading">
-          Your target
-        </h2>
-        <form method="post" action={base}>
+        <h2 id="target-heading">Your target</h2>
+        <form method="post" action={`/api/courses/${course.id}`}>
           <input type="hidden" name="_action" value="target" />
           <fieldset class="chips">
             <legend>Aim for</legend>
@@ -118,97 +256,4 @@ const isPreset = presets.some(([, m]) => m === course.targetMark);
   }
 
   {needed && <NeededPanel needed={needed} assessments={course.assessments} />}
-
-  <section id="assessments" aria-labelledby="assessments-heading">
-    <h2 id="assessments-heading">Assessments</h2>
-    {
-      course.assessments.length === 0 && (
-        <p class="muted">No assessments yet. Add each item from the course's class summary with its weight.</p>
-      )
-    }
-    {
-      course.assessments.map((a) => (
-        <article class="card assessment" id={`assessment-${a.id}`} aria-labelledby={`a-${a.id}-name`}>
-          <div class="assessment-head">
-            <h3 id={`a-${a.id}-name`}>{a.name}</h3>
-            <span class="muted small">{fmtMark(a.weight)}% of course</span>
-          </div>
-          {a.score !== null ? (
-            <p style="margin:0.25rem 0 0">
-              <strong>
-                {fmtMark(a.score)} / {fmtMark(a.outOf)}
-              </strong>{" "}
-              <span class="muted">({fmtPercent(percentage(a.score, a.outOf))})</span>
-            </p>
-          ) : (
-            <p class="muted" style="margin:0.25rem 0 0">
-              Not marked yet
-            </p>
-          )}
-          <form class="score-form" method="post" action={`${base}/assessments/${a.id}`}>
-            <input type="hidden" name="_action" value="score" />
-            <Field
-              id={`score-${a.id}`}
-              label={`Mark out of ${fmtMark(a.outOf)}`}
-              name="score"
-              type="number"
-              inputmode="decimal"
-              step="any"
-              min="0"
-              max={String(a.outOf)}
-              value={a.score === null ? undefined : String(a.score)}
-            />
-            <button type="submit" class="button-secondary">
-              Save<span class="visually-hidden"> mark for {a.name}</span>
-            </button>
-          </form>
-          <details>
-            <summary>Edit or remove<span class="visually-hidden"> {a.name}</span></summary>
-            <form method="post" action={`${base}/assessments/${a.id}`}>
-              <input type="hidden" name="_action" value="update" />
-              <AssessmentFields idPrefix={`edit-${a.id}`} item={a} />
-              <div class="actions">
-                <button type="submit">Save changes</button>
-              </div>
-            </form>
-            <form method="post" action={`${base}/assessments/${a.id}`} style="margin-top:0.5rem">
-              <input type="hidden" name="_action" value="delete" />
-              <button type="submit" class="button-danger">
-                Remove {a.name}
-              </button>
-            </form>
-          </details>
-        </article>
-      ))
-    }
-    {
-      course.assessments.length > 0 && !standing.weightsSumTo100 && (
-        <p class="muted small">
-          Weights so far add up to {fmtMark(standing.totalWeight)}%. Most courses add up to 100%.
-        </p>
-      )
-    }
-  </section>
-
-  <section class="card" id="add-assessment" aria-labelledby="add-heading">
-    <details open={course.assessments.length === 0}>
-      <summary><h2 id="add-heading" style="margin:0;font-size:1.05rem">Add an assessment</h2></summary>
-      <form method="post" action={base}>
-        <input type="hidden" name="_action" value="add-assessment" />
-        <AssessmentFields idPrefix="add" />
-        <button type="submit" class="button-block">Add assessment</button>
-      </form>
-    </details>
-  </section>
-
-  <section class="card" id="details" aria-labelledby="details-heading">
-    <details>
-      <summary><h2 id="details-heading" style="margin:0;font-size:1.05rem">Course details and grade</h2></summary>
-      <CourseForm action={base} course={course} submitLabel="Save details" idPrefix="edit" />
-      <form method="post" action={base} style="margin-top:1rem">
-        <input type="hidden" name="_action" value="delete" />
-        <button type="submit" class="button-danger button-block">Delete {course.code} and its marks</button>
-      </form>
-    </details>
-  </section>
 </Layout>

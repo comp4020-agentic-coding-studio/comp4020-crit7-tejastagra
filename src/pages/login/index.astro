@@ -2,17 +2,18 @@
 import Field from "../../components/Field.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import Layout from "../../layouts/Layout.astro";
-import { DEMO_PASSWORD, DEMO_UNI_ID } from "../../lib/data";
+import { DEMO_STUDENT } from "../../lib/data";
 import { safeNext } from "../../lib/forms";
 
 const next = safeNext(Astro.url.searchParams.get("next"), "/");
-if (Astro.locals.student) return Astro.redirect(next, 303);
+if (Astro.locals.user) return Astro.redirect(Astro.locals.user.role === "staff" ? "/staff/" : next, 303);
 ---
 
 <Layout title="Log in">
-  <PageHeader title="Log in" lede="Log in with your uni ID to see your results." />
+  <PageHeader title="Student login" lede="Log in with your uni ID to see your results." />
   <section class="card">
     <form method="post" action="/api/login">
+      <input type="hidden" name="portal" value="student" />
       <input type="hidden" name="next" value={next} />
       <Field
         id="login-uni-id"
@@ -35,8 +36,9 @@ if (Astro.locals.student) return Astro.redirect(next, 303);
     </form>
   </section>
   <p>New here? <a href="/register/">Create an account</a></p>
+  <p>Staff member? <a href="/staff/login/">Staff login</a></p>
   <p class="muted small">
-    Demo student: <code>{DEMO_UNI_ID}</code> / <code>{DEMO_PASSWORD}</code>. This is a mock of ANU login, not the real
-    thing, so don't reuse your real ANU password.
+    Demo student: <code>{DEMO_STUDENT.uniId}</code> / <code>{DEMO_STUDENT.password}</code>. This is a mock of ANU login,
+    not the real thing, so don't reuse your real ANU password.
   </p>
 </Layout>

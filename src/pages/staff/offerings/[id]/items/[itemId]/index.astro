@@ -1,0 +1,129 @@
+---
+// One assessment item, for its convenor: release it, enter marks one by one
+// (works on a phone), or upload a CSV of them.
+import Field from "../../../../../../components/Field.astro";
+import ItemFields from "../../../../../../components/staff/ItemFields.astro";
+import Layout from "../../../../../../layouts/Layout.astro";
+import { getOffering, scoreKey } from "../../../../../../lib/data";
+import { fmtMark } from "../../../../../../lib/format";
+import { termLabel } from "../../../../../../lib/record";
+
+const staff = Astro.locals.user!;
+const offering = getOffering(staff.id, Number(Astro.params.id));
+const item = offering?.items.find((i) => i.id === Number(Astro.params.itemId));
+if (!offering || !item) return new Response("Not found", { status: 404 });
+
+const base = `/api/staff/offerings/${offering.id}/items/${item.id}`;
+const marked = offering.enrolments.filter((e) => offering.scores.has(scoreKey(item.id, e.id))).length;
+---
+
+<Layout title={`${item.name}, ${offering.code} (staff)`}>
+  <p class="small"><a href={`/staff/offerings/${offering.id}/`}>← {offering.code}</a></p>
+  <h1>{item.name}</h1>
+  <p class="lede" style="margin-bottom:0.25rem">{offering.code} {offering.title}</p>
+  <p class="muted small">
+    {termLabel(offering.term, offering.year)} · {fmtMark(item.weight)}% of the course · marked out of {fmtMark(item.outOf)}
+  </p>
+
+  <section class="card" aria-labelledby="release-heading">
+    <h2 id="release-heading">
+      {item.released ? "Released to students" : "Hidden from students"}
+    </h2>
+    <p>
+      {marked} of {offering.enrolments.length} students have a mark.
+      {item.released ? " Students can see their marks for this item." : " Students see it as \"not released\" until you release it."}
+    </p>
+    <form method="post" action={base}>
+      <input type="hidden" name="_action" value={item.released ? "hide" : "release"} />
+      <button type="submit" class={item.released ? "button-secondary" : ""}>
+        {item.released ? "Hide from students" : "Release to students"}
+      </button>
+    </form>
+  </section>
+
+  <section id="marks" aria-labelledby="marks-heading">
+    <h2 id="marks-heading">Marks</h2>
+    {offering.enrolments.length === 0 && <p class="muted">Enrol students on the course page first.</p>}
+    {
+      offering.enrolments.length > 0 && (
+        <form method="post" action={base} style="margin-bottom:1.5rem">
+          <input type="hidden" name="_action" value="save-marks" />
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Student</th>
+                  <th scope="col">Mark / {fmtMark(item.outOf)}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {offering.enrolments.map((e) => {
+                  const score = offering.scores.get(scoreKey(item.id, e.id));
+                  return (
+                    <tr>
+                      <td class="course-cell">
+                        <label for={`score-${e.id}`}>
+                          <strong>{e.name}</strong>
+                        </label>
+                        <span>{e.uniId}</span>
+                      </td>
+                      <td style="width:8rem">
+                        <input
+                          id={`score-${e.id}`}
+                          name={`score-${e.id}`}
+                          type="number"
+                          inputmode="decimal"
+                          step="any"
+                          min="0"
+                          max={String(item.outOf)}
+                          value={score === undefined ? undefined : String(score)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p class="muted small">Leave a box empty for no mark.</p>
+          <button type="submit" class="button-block">Save marks</button>
+        </form>
+      )
+    }
+  </section>
+
+  <section class="card" id="upload" aria-labelledby="upload-heading">
+    <h2 id="upload-heading">Upload marks from a spreadsheet</h2>
+    <form method="post" action={base} enctype="multipart/form-data">
+      <input type="hidden" name="_action" value="upload-marks" />
+      <Field
+        id="marks-file"
+        label="CSV file"
+        name="file"
+        type="file"
+        accept=".csv,text/csv,text/plain"
+        hint={`Columns: uni_id, mark (out of ${fmtMark(item.outOf)}). A header row is fine; an empty mark clears it.`}
+      />
+      <div class="field">
+        <label for="marks-csv">Or paste it</label>
+        <textarea id="marks-csv" name="csv" rows="5" placeholder="u1234567,17.5"></textarea>
+      </div>
+      <button type="submit">Upload marks</button>
+    </form>
+  </section>
+
+  <section class="card" id="item-details" aria-labelledby="item-details-heading">
+    <details>
+      <summary><h2 id="item-details-heading" style="margin:0;font-size:1.1rem">Edit or delete this item</h2></summary>
+      <form method="post" action={base}>
+        <input type="hidden" name="_action" value="update" />
+        <ItemFields idPrefix="edit" item={item} />
+        <button type="submit">Save item</button>
+      </form>
+      <form method="post" action={base} style="margin-top:1rem">
+        <input type="hidden" name="_action" value="delete" />
+        <button type="submit" class="button-danger button-block">Delete {item.name} and its marks</button>
+      </form>
+    </details>
+  </section>
+</Layout>

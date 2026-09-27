@@ -8,12 +8,14 @@ import Field from "../components/Field.astro";
 import PageHeader from "../components/PageHeader.astro";
 import Stat from "../components/Stat.astro";
 import Layout from "../layouts/Layout.astro";
-import { DEMO_PASSWORD, DEMO_UNI_ID, listCourses } from "../lib/data";
+import { DEMO_STAFF, DEMO_STUDENT, isDemoAccount, listStudentCourses } from "../lib/data";
 import { fmtGpa, plural } from "../lib/format";
 import { summarise } from "../lib/record";
 
-const student = Astro.locals.student;
-const summary = student ? summarise(student, listCourses(student.id)) : null;
+const user = Astro.locals.user;
+if (user?.role === "staff") return Astro.redirect("/staff/", 303);
+const student = user;
+const summary = student ? summarise(student, listStudentCourses(student.uniId)) : null;
 const current = summary?.courses.filter((v) => v.inProgress) ?? [];
 const latest = summary?.semesters.find((s) => !s.inProgress);
 const plan = summary?.plan;
@@ -40,6 +42,7 @@ const plan = summary?.plan;
           <section class="card" aria-labelledby="login-heading">
             <h2 id="login-heading">Log in</h2>
             <form method="post" action="/api/login">
+              <input type="hidden" name="portal" value="student" />
               <input type="hidden" name="next" value="/" />
               <Field
                 id="home-uni-id"
@@ -63,13 +66,14 @@ const plan = summary?.plan;
               </button>
             </form>
             <p class="small" style="margin:0.75rem 0 0">
-              New here? <a href="/register/">Create an account</a>
+              New here? <a href="/register/">Create an account</a> · Staff? <a href="/staff/login/">Staff login</a>
             </p>
           </section>
           <div>
             <Alert kind="info">
-              <strong>Just looking?</strong> Log in as the demo student: uni ID <code>{DEMO_UNI_ID}</code>, password{" "}
-              <code>{DEMO_PASSWORD}</code>.
+              <strong>Just looking?</strong> Log in as the demo student: uni ID <code>{DEMO_STUDENT.uniId}</code>,
+              password <code>{DEMO_STUDENT.password}</code>. Or see the other side as the demo convenor on the{" "}
+              <a href="/staff/login/">staff login</a>: <code>{DEMO_STAFF.uniId}</code> / <code>{DEMO_STAFF.password}</code>.
             </Alert>
             <p class="small muted">
               This is a prototype with its own accounts and illustrative data. It isn't connected to ISIS, so
@@ -83,7 +87,7 @@ const plan = summary?.plan;
           <section class="card">
             <h3>See your archive</h3>
             <p style="margin:0">
-              Every course by session, with its released grade and each assessment mark behind it.
+              Every course by session, with its released grade and each assessment mark your convenor has released.
             </p>
           </section>
           <section class="card">
@@ -93,9 +97,10 @@ const plan = summary?.plan;
             </p>
           </section>
           <section class="card">
-            <h3>Plan each course</h3>
+            <h3>Try "what if"</h3>
             <p style="margin:0">
-              Set a target grade and see exactly what you need on the final exam or the last assignments.
+              See what a mark on the next assignment would do to your course grade and your GPA, or what you need to
+              hit a target.
             </p>
           </section>
           <section class="card">
@@ -151,7 +156,7 @@ const plan = summary?.plan;
 
         <h2>This semester</h2>
         {current.length === 0 ? (
-          <p class="muted">No courses in progress. Add one to plan what you need.</p>
+          <p class="muted">No courses in progress. Courses appear here when your convenor enrols you.</p>
         ) : (
           <ul class="course-list">
             {current.map((v) => (
@@ -159,12 +164,6 @@ const plan = summary?.plan;
             ))}
           </ul>
         )}
-        <p>
-          <a class="button button-secondary" href="/courses/new/">
-            Add a course
-          </a>
-        </p>
-
         {latest && (
           <>
             <h2>Latest results: {latest.label}</h2>
@@ -179,10 +178,10 @@ const plan = summary?.plan;
           </>
         )}
 
-        {student.uniId === DEMO_UNI_ID && (
+        {isDemoAccount(student.uniId) && (
           <section class="card" aria-labelledby="demo-heading">
             <h2 id="demo-heading">Demo account</h2>
-            <p class="small">Everyone shares this account. Put it back to its starting history any time.</p>
+            <p class="small">Everyone shares the demo accounts. Put the demo data back to how it started any time.</p>
             <form method="post" action="/api/demo/reset">
               <button type="submit" class="button-secondary">
                 Reset demo data

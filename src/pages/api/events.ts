@@ -1,14 +1,15 @@
 import type { APIRoute } from "astro";
-import { bus, STUDENT_CHANGED } from "../../lib/events";
+import { bus, RESULTS_CHANGED } from "../../lib/events";
 
 // Server-sent events: a long-lived response the browser reads with
-// `new EventSource("/api/events")`. A logged-in student's connection hears
-// "changed" whenever their data changes elsewhere (another tab, their
-// phone), so the page can offer a refresh. Anonymous connections only get
+// `new EventSource("/api/events")`. A logged-in user's connection hears
+// "changed" whenever their results change elsewhere (staff releasing marks,
+// or their own edits in another tab or on their phone), so the page can
+// offer a refresh. Anonymous connections only get
 // the heartbeat — which is also what the post-deploy CI probe checks for.
 export const GET: APIRoute = ({ locals }) => {
-  const studentId = locals.student?.id ?? null;
-  let onChange: (id: number) => void;
+  const uniId = locals.user?.uniId ?? null;
+  let onChange: (id: string) => void;
   let heartbeat: ReturnType<typeof setInterval>;
 
   const stream = new ReadableStream<string>({
@@ -18,13 +19,13 @@ export const GET: APIRoute = ({ locals }) => {
       controller.enqueue(": connected\n\n");
       heartbeat = setInterval(() => controller.enqueue(": ping\n\n"), 30_000);
       onChange = (id) => {
-        if (id === studentId) controller.enqueue(`event: changed\ndata: {}\n\n`);
+        if (id === uniId) controller.enqueue(`event: changed\ndata: {}\n\n`);
       };
-      if (studentId !== null) bus.on(STUDENT_CHANGED, onChange);
+      if (uniId !== null) bus.on(RESULTS_CHANGED, onChange);
     },
     cancel() {
       clearInterval(heartbeat);
-      bus.off(STUDENT_CHANGED, onChange);
+      bus.off(RESULTS_CHANGED, onChange);
     },
   });
 

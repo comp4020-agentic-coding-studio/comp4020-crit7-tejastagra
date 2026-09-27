@@ -1,0 +1,29 @@
+---
+import Field from "../../../components/Field.astro";
+import PageHeader from "../../../components/PageHeader.astro";
+import Layout from "../../../layouts/Layout.astro";
+import { DEMO_STAFF } from "../../../lib/data";
+import { safeNext } from "../../../lib/forms";
+
+const next = safeNext(Astro.url.searchParams.get("next"), "/staff/");
+const user = Astro.locals.user;
+if (user) return Astro.redirect(user.role === "staff" ? next : "/", 303);
+---
+
+<Layout title="Staff login">
+  <PageHeader title="Staff login" lede="For course convenors: set up assessments, upload marks and release results." />
+  <section class="card">
+    <form method="post" action="/api/login">
+      <input type="hidden" name="portal" value="staff" />
+      <input type="hidden" name="next" value={next} />
+      <Field id="staff-uni-id" label="Staff uni ID" name="uniId" required autocomplete="username" autocapitalize="none" placeholder="u1234567" />
+      <Field id="staff-password" label="Password" name="password" type="password" required autocomplete="current-password" />
+      <button type="submit" class="button-block">Log in</button>
+    </form>
+  </section>
+  <p>A student? <a href="/login/">Student login</a></p>
+  <p class="muted small">
+    Demo convenor: <code>{DEMO_STAFF.uniId}</code> / <code>{DEMO_STAFF.password}</code>. Staff accounts can't be created
+    from the site.
+  </p>
+</Layout>

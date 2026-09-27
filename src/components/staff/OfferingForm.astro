@@ -1,0 +1,35 @@
+---
+// Create or edit an offering's details (staff only).
+import type { Offering } from "../../lib/data/staff";
+import { TERM_LABELS } from "../../lib/record";
+import { TERMS } from "../../lib/schema";
+import Field from "../Field.astro";
+
+interface Props {
+  action: string;
+  offering?: Offering;
+  submitLabel: string;
+  idPrefix: string;
+}
+const { action, offering, submitLabel, idPrefix } = Astro.props;
+const thisYear = new Date().getFullYear();
+---
+
+<form method="post" action={action}>
+  <input type="hidden" name="_action" value={offering ? "update" : "create"} />
+  <div class="row">
+    <Field id={`${idPrefix}-code`} label="Course code" name="code" required maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="COMP1100" value={offering?.code} />
+    <Field id={`${idPrefix}-units`} label="Units" name="units" type="number" inputmode="numeric" min="1" max="48" required value={String(offering?.units ?? 6)} />
+  </div>
+  <Field id={`${idPrefix}-title`} label="Course name" name="title" required maxlength="120" placeholder="Programming as Problem Solving" value={offering?.title} />
+  <div class="row">
+    <Field id={`${idPrefix}-year`} label="Year" name="year" type="number" inputmode="numeric" min="1994" max="2100" required value={String(offering?.year ?? thisYear)} />
+    <div class="field">
+      <label for={`${idPrefix}-term`}>Session</label>
+      <select id={`${idPrefix}-term`} name="term" required>
+        {TERMS.map((t) => <option value={t} selected={(offering?.term ?? "S2") === t}>{TERM_LABELS[t]}</option>)}
+      </select>
+    </div>
+  </div>
+  <button type="submit" class="button-block">{submitLabel}</button>
+</form>
