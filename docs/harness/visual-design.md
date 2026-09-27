@@ -67,8 +67,14 @@ Radius 6.75px on inputs and buttons; **cards are square**.
   shows. There is no separate staff login.
 - **Logged-out `/`:** just the login, in a narrow centred card. No hero,
   no feature list.
-- **Tables:** gold header row with dark text, weight 700; striped rows;
-  cells padded 9px 13.5px.
+- **Boxes over tables.** Information is shown in boxes (the dashboard's
+  course cards: code in gold, title, one meta line, grade badge on the
+  right) so it's easy to scan. Past courses in the archive use the same
+  course boxes as "This semester", grouped by session. Use a table only
+  where comparing many rows side by side is the job (e.g. staff typing
+  marks for a whole class), and say why in a comment.
+- **Tables, where they're justified:** gold header row with dark text,
+  weight 700; striped rows; cells padded 9px 13.5px.
 - **Buttons:** gold fill with dark text, weight 600; secondary is a gold
   outline with gold text.
 - **Footer:** a 1px divider rule, muted 0.875rem text.
