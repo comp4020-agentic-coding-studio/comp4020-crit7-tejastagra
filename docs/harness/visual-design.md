@@ -39,6 +39,13 @@ Radius 6.75px on inputs and buttons; **cards are square**.
 - Nav links 0.875rem, 400, `--text-2`; current page gold. Wordmark 600.
 - Gold text is used only at these sizes/weights (large or 600+), where it
   passes contrast; small text links use `--link`.
+- **Weight discipline, as A2:** 400 for everything you read (body, lede,
+  nav links including the current one, table cells, numbers, scores, stat
+  values, badges' neighbours, disclosure text); 600 only for h2/h3, card
+  and item titles, form labels and legends, buttons, grade badges and the
+  wordmark; 700 only for table headers. **No bold inside sentences**: no
+  `<strong>` for emphasis. Hierarchy comes from size, ink strength (100% /
+  78% / 62%) and position. The owner rejected "half the page is bold".
 
 ## Layout
 
