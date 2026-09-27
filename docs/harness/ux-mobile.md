@@ -6,7 +6,7 @@
   media queries. Every feature (add a course, enter a mark, set a target,
   plan a GPA) must be doable on a phone. Why: the release email gets opened
   on a phone.
-- No wide tables for assessment lists or courses: use stacked cards or
+- No wide tables for assessment lists: use stacked cards or
   definition lists that reflow. A table is fine only when it fits at 360px.
 - Tap targets at least 44px tall. Inputs at least 16px font so iOS doesn't
   zoom on focus. Use `inputmode="decimal"` for marks.
