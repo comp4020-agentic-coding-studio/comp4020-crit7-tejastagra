@@ -30,8 +30,8 @@ instead. Don't use your real ANU password.
 
 ## Why this system
 
-At ANU your results are spread across three places. Wattle has assignment marks
-per course, ISIS has final grades and a GPA, and the maths to connect them
+At ANU your results are spread across three places. Canvas has assignment marks
+per course, ANUHub has final grades and a GPA, and the maths to connect them
 lives in a spreadsheet you rebuild every semester. None of them answers
 questions about the future: what you need on the exam, or whether a 6.0 is
 still possible. This app puts the archive and the planning in one place.
@@ -62,9 +62,11 @@ Where ANU says nothing, I made a choice and the app says so:
 - Hurdles aren't modelled.
 
 **It looks like part of the university.** The design follows my A2 course
-site: a white header with a crest and "ANU / Grades" lockup, gold headings,
-a thin gold line down the page, and gold-headed tables. The crest is drawn
-for this prototype, not ANU's.
+site, using its exact colours, font weights and spacing: a plain header with
+a crest and "ANU / Grades" lockup, gold headings, square cards and
+gold-headed tables, in a centred column with little on each page. One login
+page serves students and staff. The crest is drawn for this prototype, not
+ANU's.
 
 **It works properly on a phone.** Results emails get opened on a phone, so
 every feature works at 360px wide:
@@ -122,7 +124,7 @@ answer.
 ## What I chose not to build
 
 - Real ANU login.
-- Importing from ISIS or Wattle (CSV upload stands in for it).
+- Importing from ANUHub or Canvas (CSV upload stands in for it).
 - Tutors or multiple convenors per course.
 - Honours grades and pre-1994 results.
 - Hurdle assessments.

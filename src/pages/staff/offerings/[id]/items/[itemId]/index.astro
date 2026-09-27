@@ -25,24 +25,9 @@ const marked = offering.enrolments.filter((e) => offering.scores.has(scoreKey(it
     {termLabel(offering.term, offering.year)} · {fmtMark(item.weight)}% of the course · marked out of {fmtMark(item.outOf)}
   </p>
 
-  <section class="card" aria-labelledby="release-heading">
-    <h2 id="release-heading">
-      {item.released ? "Released to students" : "Hidden from students"}
-    </h2>
-    <p>
-      {marked} of {offering.enrolments.length} students have a mark.
-      {item.released ? " Students can see their marks for this item." : " Students see it as \"not released\" until you release it."}
-    </p>
-    <form method="post" action={base}>
-      <input type="hidden" name="_action" value={item.released ? "hide" : "release"} />
-      <button type="submit" class={item.released ? "button-secondary" : ""}>
-        {item.released ? "Hide from students" : "Release to students"}
-      </button>
-    </form>
-  </section>
-
+  <div class="split split-side" style="margin-top:1.5rem">
   <section id="marks" aria-labelledby="marks-heading">
-    <h2 id="marks-heading">Marks</h2>
+    <h2 id="marks-heading" style="margin-top:0">Marks</h2>
     {offering.enrolments.length === 0 && <p class="muted">Enrol students on the course page first.</p>}
     {
       offering.enrolments.length > 0 && (
@@ -91,6 +76,22 @@ const marked = offering.enrolments.filter((e) => offering.scores.has(scoreKey(it
       )
     }
   </section>
+  <aside class="col" aria-label="Release and upload">
+  <section class="card" aria-labelledby="release-heading">
+    <h2 id="release-heading">
+      {item.released ? "Released to students" : "Hidden from students"}
+    </h2>
+    <p>
+      {marked} of {offering.enrolments.length} students have a mark.
+      {item.released ? " Students can see their marks for this item." : " Students see it as \"not released\" until you release it."}
+    </p>
+    <form method="post" action={base}>
+      <input type="hidden" name="_action" value={item.released ? "hide" : "release"} />
+      <button type="submit" class={item.released ? "button-secondary" : ""}>
+        {item.released ? "Hide from students" : "Release to students"}
+      </button>
+    </form>
+  </section>
 
   <section class="card" id="upload" aria-labelledby="upload-heading">
     <h2 id="upload-heading">Upload marks from a spreadsheet</h2>
@@ -114,7 +115,7 @@ const marked = offering.enrolments.filter((e) => offering.scores.has(scoreKey(it
 
   <section class="card" id="item-details" aria-labelledby="item-details-heading">
     <details>
-      <summary><h2 id="item-details-heading" style="margin:0;font-size:1.1rem">Edit or delete this item</h2></summary>
+      <summary><h2 id="item-details-heading">Edit or delete this item</h2></summary>
       <form method="post" action={base}>
         <input type="hidden" name="_action" value="update" />
         <ItemFields idPrefix="edit" item={item} />
@@ -126,4 +127,6 @@ const marked = offering.enrolments.filter((e) => offering.scores.has(scoreKey(it
       </form>
     </details>
   </section>
+  </aside>
+  </div>
 </Layout>

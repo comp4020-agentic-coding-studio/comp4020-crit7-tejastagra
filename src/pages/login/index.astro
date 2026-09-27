@@ -1,44 +1,19 @@
 ---
-import Field from "../../components/Field.astro";
+import LoginForm from "../../components/LoginForm.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import Layout from "../../layouts/Layout.astro";
-import { DEMO_STUDENT } from "../../lib/data";
 import { safeNext } from "../../lib/forms";
 
-const next = safeNext(Astro.url.searchParams.get("next"), "/");
-if (Astro.locals.user) return Astro.redirect(Astro.locals.user.role === "staff" ? "/staff/" : next, 303);
+const next = safeNext(Astro.url.searchParams.get("next"), "");
+const user = Astro.locals.user;
+if (user) return Astro.redirect(user.role === "staff" ? "/staff/" : "/", 303);
 ---
 
 <Layout title="Log in">
-  <PageHeader title="Student login" lede="Log in with your uni ID to see your results." />
-  <section class="card">
-    <form method="post" action="/api/login">
-      <input type="hidden" name="portal" value="student" />
-      <input type="hidden" name="next" value={next} />
-      <Field
-        id="login-uni-id"
-        label="Uni ID"
-        name="uniId"
-        required
-        autocomplete="username"
-        autocapitalize="none"
-        placeholder="u1234567"
-      />
-      <Field
-        id="login-password"
-        label="Password"
-        name="password"
-        type="password"
-        required
-        autocomplete="current-password"
-      />
-      <button type="submit" class="button-block">Log in</button>
-    </form>
-  </section>
-  <p>New here? <a href="/register/">Create an account</a></p>
-  <p>Staff member? <a href="/staff/login/">Staff login</a></p>
-  <p class="muted small">
-    Demo student: <code>{DEMO_STUDENT.uniId}</code> / <code>{DEMO_STUDENT.password}</code>. This is a mock of ANU login,
-    not the real thing, so don't reuse your real ANU password.
-  </p>
+  <div class="narrow">
+    <PageHeader title="Log in" lede="Students see their results; staff manage their courses." />
+    <section class="card">
+      <LoginForm idPrefix="login" next={next} />
+    </section>
+  </div>
 </Layout>

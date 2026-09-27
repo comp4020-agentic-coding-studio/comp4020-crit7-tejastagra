@@ -7,6 +7,7 @@ if (Astro.locals.user) return Astro.redirect("/", 303);
 ---
 
 <Layout title="Create an account">
+  <div class="narrow">
   <PageHeader
     title="Create an account"
     lede="Your uni ID links you to the courses your convenors enrol you in. This is a prototype with its own accounts, so pick a new password, not your real ANU one."
@@ -39,4 +40,5 @@ if (Astro.locals.user) return Astro.redirect("/", 303);
     </form>
   </section>
   <p>Already have one? <a href="/login/">Log in</a></p>
+  </div>
 </Layout>

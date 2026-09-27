@@ -1,8 +1,8 @@
 ---
-// Every page's shell, in the university-site style of docs/harness/visual-design.md:
-// the lockup header and nav, an optional hero, the gold-ruled content
-// column, flash messages from a form redirect (?error= / ?notice=), the
-// footer, and live sync across a student's devices.
+// Every page's shell, in the A2 style of docs/harness/visual-design.md: the
+// lockup header and nav, an optional hero, the full-width content area,
+// flash messages from a form redirect (?error= / ?notice=), the footer, and
+// live sync across a user's devices.
 import Alert from "../components/Alert.astro";
 import Crest from "../components/Crest.astro";
 import "../styles.css";
@@ -36,7 +36,7 @@ const links = user?.role === "staff"
       {
         href: "/login/",
         label: "Log in",
-        current: path.startsWith("/login") || path.startsWith("/register") || path.startsWith("/staff/login"),
+        current: path.startsWith("/login") || path.startsWith("/register"),
       },
       { href: "/readme/", label: "About", current: path.startsWith("/readme") },
     ];
@@ -48,7 +48,7 @@ const links = user?.role === "staff"
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#fdfcfa" />
     <title>{title} · ANU Grades</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -63,56 +63,56 @@ const links = user?.role === "staff"
   <body data-signed-in={user ? "" : undefined}>
     <header>
       <div class="site-header">
-      <nav class:list={["nav-inner", { "nav-collapsible": user?.role === "student" }]} aria-label="Main">
-        <a class="lockup" href="/">
-          <Crest />
-          <span>ANU<span class="slash">/</span>Grades</span>
-        </a>
-        {
-          user?.role === "student" && (
-            <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="nav-links">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-              <span class="visually-hidden">Menu</span>
-            </button>
-          )
-        }
-        <ul class="nav-links" id="nav-links">
+        <nav class:list={["wrap", { "nav-collapsible": user?.role === "student" }]} aria-label="Main">
+          <a class="lockup" href="/">
+            <Crest />
+            <span>ANU<span class="slash">/</span>Grades</span>
+          </a>
           {
-            links.map((l) => (
-              <li>
-                <a href={l.href} aria-current={l.current ? "page" : undefined}>
-                  {l.label}
-                </a>
-              </li>
-            ))
-          }
-          {
-            user && (
-              <li>
-                <form method="post" action="/api/logout">
-                  <button type="submit">Log out</button>
-                </form>
-              </li>
+            user?.role === "student" && (
+              <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="nav-links">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+                <span class="visually-hidden">Menu</span>
+              </button>
             )
           }
-        </ul>
-      </nav>
+          <ul class="nav-links" id="nav-links">
+            {
+              links.map((l) => (
+                <li>
+                  <a href={l.href} aria-current={l.current ? "page" : undefined}>
+                    {l.label}
+                  </a>
+                </li>
+              ))
+            }
+            {
+              user && (
+                <li>
+                  <form method="post" action="/api/logout">
+                    <button type="submit">Log out</button>
+                  </form>
+                </li>
+              )
+            }
+          </ul>
+        </nav>
       </div>
       <slot name="hero" />
     </header>
-    <div class="frame">
-      <main id="main">
-        {error && <Alert kind="error">{error}</Alert>}
-        {notice && <Alert kind="notice">{notice}</Alert>}
-        <slot />
-      </main>
-      <footer class="site-footer">
+    <main id="main" class="wrap">
+      {error && <Alert kind="error">{error}</Alert>}
+      {notice && <Alert kind="notice">{notice}</Alert>}
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
         <p>ANU Grades is a student prototype built for COMP4020, not the official ANU record.</p>
         <p>GPA and grade rules follow ANU's published grading scale and GPA pages. <a href="/readme/">About</a></p>
-      </footer>
-    </div>
+      </div>
+    </footer>
     {
       user && (
         <div class="sync-banner" role="status" hidden>

@@ -1,0 +1,30 @@
+---
+// The one login form, for students and staff alike: the account decides
+// where it lands. Used on the landing page and on /login/.
+import { DEMO_STAFF, DEMO_STUDENT } from "../lib/data";
+import Field from "./Field.astro";
+
+interface Props {
+  idPrefix: string;
+  next?: string;
+}
+const { idPrefix, next = "" } = Astro.props;
+---
+
+<form method="post" action="/api/login">
+  {next && <input type="hidden" name="next" value={next} />}
+  <Field id={`${idPrefix}-uni-id`} label="Uni ID" name="uniId" required autocomplete="username" autocapitalize="none" placeholder="u1234567" />
+  <Field id={`${idPrefix}-password`} label="Password" name="password" type="password" required autocomplete="current-password" />
+  <button type="submit" class="button-block">Log in</button>
+</form>
+<p class="small muted" style="margin:1rem 0 0">
+  Students and staff both log in here. New student? <a href="/register/">Create an account</a>.
+</p>
+<details class="demo">
+  <summary>Demo accounts</summary>
+  <dl class="demo-list">
+    <div><dt>Student</dt><dd><code>{DEMO_STUDENT.uniId}</code> / <code>{DEMO_STUDENT.password}</code></dd></div>
+    <div><dt>Staff</dt><dd><code>{DEMO_STAFF.uniId}</code> / <code>{DEMO_STAFF.password}</code></dd></div>
+  </dl>
+  <p class="small muted" style="margin:0">A mock of ANU login with illustrative data. Don't use your real ANU password.</p>
+</details>

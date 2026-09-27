@@ -1,14 +1,11 @@
 ---
-// "/" is the landing page for visitors (hero, login, what the app does) and
-// the dashboard once logged in. There's no "Home" in the nav; the lockup
-// links here.
-import Alert from "../components/Alert.astro";
+// "/" is just the login for visitors, and the student dashboard once logged
+// in. Staff land on /staff/. Functional only (docs/harness/visual-design.md).
 import CourseCard from "../components/CourseCard.astro";
-import Field from "../components/Field.astro";
-import PageHeader from "../components/PageHeader.astro";
+import LoginForm from "../components/LoginForm.astro";
 import Stat from "../components/Stat.astro";
 import Layout from "../layouts/Layout.astro";
-import { DEMO_STAFF, DEMO_STUDENT, isDemoAccount, listStudentCourses } from "../lib/data";
+import { isDemoAccount, listStudentCourses } from "../lib/data";
 import { fmtGpa, plural } from "../lib/format";
 import { summarise } from "../lib/record";
 
@@ -17,142 +14,56 @@ if (user?.role === "staff") return Astro.redirect("/staff/", 303);
 const student = user;
 const summary = student ? summarise(student, listStudentCourses(student.uniId)) : null;
 const current = summary?.courses.filter((v) => v.inProgress) ?? [];
-const latest = summary?.semesters.find((s) => !s.inProgress);
 const plan = summary?.plan;
 ---
 
-<Layout title={student ? "Dashboard" : "Your grades, in one place"}>
+<Layout title={student ? "Dashboard" : "Log in"}>
   {
     !student && (
-      <section class="hero" slot="hero">
-        <div class="hero-inner">
-          <h1>Your grades, in one place</h1>
-          <p>
-            Every released result with its assessment breakdown, your GPA worked out the ANU way, and a plain
-            answer to "what do I need on the final?"
-          </p>
-        </div>
-      </section>
-    )
-  }
-  {
-    !student && (
-      <>
-        <div class="two-col">
-          <section class="card" aria-labelledby="login-heading">
-            <h2 id="login-heading">Log in</h2>
-            <form method="post" action="/api/login">
-              <input type="hidden" name="portal" value="student" />
-              <input type="hidden" name="next" value="/" />
-              <Field
-                id="home-uni-id"
-                label="Uni ID"
-                name="uniId"
-                required
-                autocomplete="username"
-                autocapitalize="none"
-                placeholder="u1234567"
-              />
-              <Field
-                id="home-password"
-                label="Password"
-                name="password"
-                type="password"
-                required
-                autocomplete="current-password"
-              />
-              <button type="submit" class="button-block">
-                Log in
-              </button>
-            </form>
-            <p class="small" style="margin:0.75rem 0 0">
-              New here? <a href="/register/">Create an account</a> · Staff? <a href="/staff/login/">Staff login</a>
-            </p>
-          </section>
-          <div>
-            <Alert kind="info">
-              <strong>Just looking?</strong> Log in as the demo student: uni ID <code>{DEMO_STUDENT.uniId}</code>,
-              password <code>{DEMO_STUDENT.password}</code>. Or see the other side as the demo convenor on the{" "}
-              <a href="/staff/login/">staff login</a>: <code>{DEMO_STAFF.uniId}</code> / <code>{DEMO_STAFF.password}</code>.
-            </Alert>
-            <p class="small muted">
-              This is a prototype with its own accounts and illustrative data. It isn't connected to ISIS, so
-              don't use your real ANU password.
-            </p>
-          </div>
-        </div>
-
-        <h2>What you can do</h2>
-        <div class="two-col">
-          <section class="card">
-            <h3>See your archive</h3>
-            <p style="margin:0">
-              Every course by session, with its released grade and each assessment mark your convenor has released.
-            </p>
-          </section>
-          <section class="card">
-            <h3>Know your GPA</h3>
-            <p style="margin:0">
-              Calculated on ANU's 7-point scale: grade points × units, fails included, WD and CRS left out.
-            </p>
-          </section>
-          <section class="card">
-            <h3>Try "what if"</h3>
-            <p style="margin:0">
-              See what a mark on the next assignment would do to your course grade and your GPA, or what you need to
-              hit a target.
-            </p>
-          </section>
-          <section class="card">
-            <h3>Plan your degree</h3>
-            <p style="margin:0">
-              Set a target GPA and see what your remaining semesters need to average to get there.
-            </p>
-          </section>
-        </div>
-      </>
+      <div class="narrow">
+        <h1>Log in</h1>
+        <p class="lede">Your ANU results, GPA and what you need to hit your targets.</p>
+        <section class="card" aria-label="Log in">
+          <LoginForm idPrefix="home" />
+        </section>
+      </div>
     )
   }
   {
     student && summary && (
       <>
-        <PageHeader title={`Hi, ${student.name.split(" ")[0]}`} lede="Your results at a glance, and what's still in play this semester." />
-        <dl class="stats">
-          <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
-          <Stat
-            label="Target GPA"
-            value={student.targetGpa === null ? "—" : student.targetGpa.toFixed(3)}
-            note={student.targetGpa === null ? "not set" : "your goal"}
-          />
-          <Stat
-            label="If you hit targets"
-            value={fmtGpa(summary.projectedGpa)}
-            note={summary.projectedGpa === null ? "set course targets" : "this semester"}
-          />
-          <Stat label="Units passed" value={String(summary.creditUnits)} note={`of ${summary.degreeUnits}`} />
-        </dl>
-
-        {plan && (
-          <section class="card needed" aria-labelledby="plan-heading">
-            <h2 id="plan-heading">Your target GPA</h2>
-            {plan.status === "possible" && (
-              <p>
-                To reach <strong>{plan.target.toFixed(3)}</strong> you need to average{" "}
-                <strong>{plan.neededAverage!.toFixed(2)} grade points</strong> across your remaining{" "}
-                {plural(plan.remainingUnits, "unit")}.
+        <div class="page-head">
+          <div>
+            <h1>Hi, {student.name.split(" ")[0]}</h1>
+            {plan?.status === "possible" && (
+              <p class="lede">
+                To reach your target GPA of {plan.target.toFixed(3)} you need to average{" "}
+                {plan.neededAverage!.toFixed(2)} grade points over your remaining {plural(plan.remainingUnits, "unit")}.{" "}
+                <a href="/planner/">Planner</a>
               </p>
             )}
-            {plan.status === "secured" && <p>You've already secured {plan.target.toFixed(3)}. Keep it up.</p>}
-            {plan.status === "out-of-reach" && (
-              <p>
-                {plan.target.toFixed(3)} is out of reach: straight HDs from here would reach{" "}
-                {fmtGpa(plan.bestPossible)}.
+            {plan?.status === "secured" && <p class="lede">You've already secured your target GPA of {plan.target.toFixed(3)}.</p>}
+            {plan?.status === "out-of-reach" && (
+              <p class="lede">
+                Your target GPA of {plan.target.toFixed(3)} is out of reach; straight HDs would reach {fmtGpa(plan.bestPossible)}.{" "}
+                <a href="/planner/">Planner</a>
               </p>
             )}
-            {plan.status === "no-units" && <p>You have no units left to change your GPA.</p>}
-            <a href="/planner/">Open the planner</a>
-          </section>
-        )}
+            {!plan && (
+              <p class="lede">
+                <a href="/planner/">Set a target GPA</a> to see what the rest of your degree needs.
+              </p>
+            )}
+          </div>
+          <dl class="stats stats-2">
+            <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
+            <Stat
+              label="If you hit targets"
+              value={fmtGpa(summary.projectedGpa)}
+              note={summary.projectedGpa === null ? "set course targets" : "this semester"}
+            />
+          </dl>
+        </div>
 
         <h2>This semester</h2>
         {current.length === 0 ? (
@@ -164,30 +75,17 @@ const plan = summary?.plan;
             ))}
           </ul>
         )}
-        {latest && (
-          <>
-            <h2>Latest results: {latest.label}</h2>
-            <ul class="course-list">
-              {latest.courses.map((v) => (
-                <CourseCard view={v} />
-              ))}
-            </ul>
-            <p>
-              <a href="/archive/">See your full archive</a>
-            </p>
-          </>
-        )}
+        <p style="margin-top:1.5rem">
+          <a href="/archive/">All your past results</a>
+        </p>
 
         {isDemoAccount(student.uniId) && (
-          <section class="card" aria-labelledby="demo-heading">
-            <h2 id="demo-heading">Demo account</h2>
-            <p class="small">Everyone shares the demo accounts. Put the demo data back to how it started any time.</p>
-            <form method="post" action="/api/demo/reset">
-              <button type="submit" class="button-secondary">
-                Reset demo data
-              </button>
-            </form>
-          </section>
+          <form method="post" action="/api/demo/reset" class="small muted" style="margin-top:2rem">
+            This is the shared demo account.{" "}
+            <button type="submit" class="link-button">
+              Reset demo data
+            </button>
+          </form>
         )}
       </>
     )

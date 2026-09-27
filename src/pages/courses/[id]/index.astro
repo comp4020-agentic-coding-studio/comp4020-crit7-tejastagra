@@ -37,6 +37,8 @@ const self = `/courses/${course.id}/`;
   <p class="lede" style="margin-bottom:0.25rem">{course.title}</p>
   <p class="muted small">{termLabel(course.term, course.year)} · {course.units} units</p>
 
+  <div class="split" style="margin-top:1.5rem">
+  <div class="col">
   <section class="card" aria-labelledby="result-heading">
     <h2 id="result-heading">{releasedGrade ? "Your result" : "Where you're at"}</h2>
     {
@@ -86,7 +88,7 @@ const self = `/courses/${course.id}/`;
   </section>
 
   <section id="assessments" aria-labelledby="assessments-heading">
-    <h2 id="assessments-heading">Assessment</h2>
+    <h2 id="assessments-heading" style="margin-top:0">Assessment</h2>
     {course.assessments.length === 0 && <p class="muted">Your convenor hasn't set up the assessment yet.</p>}
     {
       course.assessments.length > 0 && (
@@ -126,7 +128,10 @@ const self = `/courses/${course.id}/`;
       )
     }
   </section>
+  {needed && <NeededPanel needed={needed} assessments={course.assessments} />}
+  </div>
 
+  <div class="col">
   {
     canWhatIf && (
       <section class="card" id="what-if" aria-labelledby="whatif-heading">
@@ -255,5 +260,12 @@ const self = `/courses/${course.id}/`;
     )
   }
 
-  {needed && <NeededPanel needed={needed} assessments={course.assessments} />}
+  {releasedGrade && (
+    <section class="card">
+      <h2>This course is finished</h2>
+      <p class="small">Its grade is released, so there's nothing left to plan here. Try the <a href="/planner/">GPA planner</a> for your remaining semesters.</p>
+    </section>
+  )}
+  </div>
+  </div>
 </Layout>

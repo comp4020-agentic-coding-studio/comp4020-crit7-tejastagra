@@ -34,9 +34,11 @@ export class Client {
     return res;
   }
 
-  async login(uniId: string, password: string, portal: "student" | "staff" = "student"): Promise<void> {
-    const res = await this.post("/api/login", { uniId, password, portal });
+  /** Log in through the one login page; the account decides where it lands. */
+  async login(uniId: string, password: string): Promise<Response> {
+    const res = await this.post("/api/login", { uniId, password });
     if (res.status !== 303 || !this.cookie) throw new Error(`login failed for ${uniId}`);
+    return res;
   }
 
   /** The path a 303 redirected to. */

@@ -3,7 +3,6 @@
 // has to average to get there.
 import Field from "../../components/Field.astro";
 import GradeBadge from "../../components/GradeBadge.astro";
-import PageHeader from "../../components/PageHeader.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listStudentCourses } from "../../lib/data";
@@ -54,11 +53,18 @@ if (plan) {
 ---
 
 <Layout title="GPA planner">
-  <PageHeader title="GPA planner" lede="Set the GPA you're aiming for and see what the rest of your degree needs to average." />
-  <dl class="stats">
-    <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
-    <Stat label="Units left" value={String(summary.remainingUnits)} note={`of a ${summary.degreeUnits}-unit degree`} />
-  </dl>
+  <div class="page-head">
+    <div>
+      <h1>GPA planner</h1>
+      <p class="lede">Set the GPA you're aiming for and see what the rest of your degree needs to average.</p>
+    </div>
+    <dl class="stats stats-2">
+      <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
+      <Stat label="Units left" value={String(summary.remainingUnits)} note={`of a ${summary.degreeUnits}-unit degree`} />
+    </dl>
+  </div>
+  <div class="split split-even">
+  <div class="col">
 
   <section class="card" aria-labelledby="goal-heading">
     <h2 id="goal-heading">Your goal</h2>
@@ -93,16 +99,18 @@ if (plan) {
       <button type="submit">Save goal</button>
     </form>
   </section>
+  </div>
+  <div class="col">
 
   {
     !plan && (
-      <p class="muted">Set a target GPA above to see what you need from here.</p>
+      <p class="muted">Set a target GPA to see what you need from here.</p>
     )
   }
 
   {
     scenarios.map(({ key, title, intro, s }) => (
-      <section class="card needed" aria-labelledby={`plan-${key}`}>
+      <section class="card" aria-labelledby={`plan-${key}`}>
         <h2 id={`plan-${key}`}>
           {title}
         </h2>
@@ -152,7 +160,9 @@ if (plan) {
     ))
   }
 
-  <p class="muted small">
+  </div>
+  </div>
+  <p class="muted small" style="margin-top:1.5rem">
     Many grade mixes reach the same GPA, so this shows the average you need, not a single path. Grade points: HD 7,
     D 6, CR 5, P 4, fail 0. Set course targets on each <a href="/archive/">in-progress course</a> to plan this
     semester.

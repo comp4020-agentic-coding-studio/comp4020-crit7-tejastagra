@@ -32,8 +32,9 @@ const rows = offering.enrolments.map((e) => {
   <p class="lede" style="margin-bottom:0.25rem">{offering.title}</p>
   <p class="muted small">{termLabel(offering.term, offering.year)} · {offering.units} units · {offering.enrolments.length} students</p>
 
+  <div class="split split-even" style="margin-top:1.5rem">
   <section id="items" aria-labelledby="items-heading">
-    <h2 id="items-heading">Assessment</h2>
+    <h2 id="items-heading" style="margin-top:0">Assessment</h2>
     {offering.items.length === 0 && <p class="muted">No assessment items yet. Add them from the class summary below.</p>}
     {
       offering.items.length > 0 && (
@@ -73,9 +74,9 @@ const rows = offering.enrolments.map((e) => {
         <p class="small muted">Weights add up to {fmtMark(totalWeight)}%. Students' what-ifs assume 100%.</p>
       )
     }
-    <section class="card" id="add-item" aria-labelledby="add-item-heading">
+    <section class="card" id="add-item" aria-labelledby="add-item-heading" style="margin-top:1.5rem">
       <details open={offering.items.length === 0}>
-        <summary><h3 id="add-item-heading" style="margin:0">Add an assessment item</h3></summary>
+        <summary><h3 id="add-item-heading">Add an assessment item</h3></summary>
         <form method="post" action={base}>
           <input type="hidden" name="_action" value="add-item" />
           <ItemFields idPrefix="add" />
@@ -86,7 +87,7 @@ const rows = offering.enrolments.map((e) => {
   </section>
 
   <section id="students" aria-labelledby="students-heading">
-    <h2 id="students-heading">Students and final grades</h2>
+    <h2 id="students-heading" style="margin-top:0">Students and final grades</h2>
     {offering.enrolments.length === 0 && <p class="muted">Nobody is enrolled yet.</p>}
     {
       offering.enrolments.length > 0 && (
@@ -157,7 +158,11 @@ const rows = offering.enrolments.map((e) => {
       )
     }
 
-    <div class="two-col" id="enrol">
+  </section>
+  </div>
+
+  <h2 id="enrol-heading-main">Class list</h2>
+  <div class="grid-3" id="enrol">
       <section class="card" aria-labelledby="enrol-heading">
         <h3 id="enrol-heading">Enrol a student</h3>
         <form method="post" action={base}>
@@ -179,12 +184,11 @@ const rows = offering.enrolments.map((e) => {
           <button type="submit">Upload class list</button>
         </form>
       </section>
-    </div>
     {
       offering.enrolments.length > 0 && (
         <section class="card" aria-labelledby="remove-heading">
           <h3 id="remove-heading">Remove a student</h3>
-          <form method="post" action={base} class="score-form">
+          <form method="post" action={base} class="inline-form">
             <input type="hidden" name="_action" value="unenrol" />
             <div class="field">
               <label for="remove-who">Student</label>
@@ -202,11 +206,11 @@ const rows = offering.enrolments.map((e) => {
         </section>
       )
     }
-  </section>
+  </div>
 
-  <section class="card" id="details" aria-labelledby="details-heading">
+  <section class="card" id="details" aria-labelledby="details-heading" style="margin-top:1.5rem">
     <details>
-      <summary><h2 id="details-heading" style="margin:0;font-size:1.1rem">Course details</h2></summary>
+      <summary><h2 id="details-heading">Course details</h2></summary>
       <OfferingForm action={base} offering={offering} submitLabel="Save details" idPrefix="edit" />
       <form method="post" action={base} style="margin-top:1rem">
         <input type="hidden" name="_action" value="delete" />

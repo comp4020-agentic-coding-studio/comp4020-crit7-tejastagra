@@ -33,34 +33,38 @@ describe("login and roles", () => {
     expect(res.headers.get("location")).toContain("/login/");
   });
 
-  it("sends a logged-out visitor from a staff page to the staff login", async () => {
+  it("sends a logged-out visitor from a staff page to the same login", async () => {
     const res = await new Client(baseUrl).get("/staff/");
-    expect(res.headers.get("location")).toContain("/staff/login/");
+    expect(res.headers.get("location")).toContain("/login/?next=%2Fstaff%2F");
   });
 
   it("refuses a wrong password", async () => {
     const c = new Client(baseUrl);
-    const res = await c.post("/api/login", { ...DEMO_STUDENT, password: "nope", portal: "student" });
+    const res = await c.post("/api/login", { ...DEMO_STUDENT, password: "nope" });
     expect(Client.location(res, baseUrl).searchParams.get("error")).toBeTruthy();
     expect(c.cookie).toBe("");
   });
 
-  it("points a staff account on the student login to the staff login", async () => {
-    const c = new Client(baseUrl);
-    const res = await c.post("/api/login", { ...DEMO_STAFF, portal: "student" });
-    expect(Client.location(res, baseUrl).searchParams.get("error")).toContain("staff login");
-    expect(c.cookie).toBe("");
-  });
-
-  it("lands staff on their courses and students on their dashboard", async () => {
+  it("uses one login page: staff land on their courses, students on their dashboard", async () => {
     const staff = new Client(baseUrl);
-    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password, "staff");
+    const res = await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
+    expect(Client.location(res, baseUrl).pathname).toBe("/staff/");
     expect((await staff.get("/")).headers.get("location")).toBe("/staff/");
     expect(textOf(await staff.html("/staff/"))).toContain("My courses");
 
     const student = new Client(baseUrl);
-    await student.login(DEMO_STUDENT.uniId, DEMO_STUDENT.password);
+    const landed = await student.login(DEMO_STUDENT.uniId, DEMO_STUDENT.password);
+    expect(Client.location(landed, baseUrl).pathname).toBe("/");
     expect(textOf(await student.html("/"))).toContain("Career GPA");
+  });
+
+  it("ignores a next= that belongs to the other role", async () => {
+    const student = new Client(baseUrl);
+    const res = await student.post("/api/login", { ...DEMO_STUDENT, next: "/staff/" });
+    expect(Client.location(res, baseUrl).pathname).toBe("/");
+    const staff = new Client(baseUrl);
+    const res2 = await staff.post("/api/login", { ...DEMO_STAFF, next: "/archive/" });
+    expect(Client.location(res2, baseUrl).pathname).toBe("/staff/");
   });
 
   it("shows only Log in and About in the logged-out nav", async () => {
@@ -86,7 +90,7 @@ describe("logged-in pages meet the accessibility floor", () => {
 
   beforeAll(async () => {
     await student.login(DEMO_STUDENT.uniId, DEMO_STUDENT.password);
-    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password, "staff");
+    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
     studentCourse = await firstHref(student, "/archive/", 'a[href^="/courses/"]');
     staffOffering = await firstHref(staff, "/staff/", 'a[href^="/staff/offerings/"]');
     staffItem = await firstHref(staff, staffOffering, 'a[href*="/items/"]');
@@ -120,7 +124,7 @@ describe("logged-in pages meet the accessibility floor", () => {
 describe("the demo student's archive follows the ANU GPA rules", () => {
   it("shows the career GPA from released grades only", async () => {
     const staff = new Client(baseUrl);
-    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password, "staff");
+    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
     await staff.post("/api/demo/reset", {});
     const c = new Client(baseUrl);
     await c.login(DEMO_STUDENT.uniId, DEMO_STUDENT.password);
@@ -143,7 +147,7 @@ describe("staff release results; the student sees exactly what's released", () =
   let studentCourse = "";
 
   beforeAll(async () => {
-    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password, "staff");
+    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
     await student.post("/api/register", { uniId, name: "Test Student", password: "password123" });
   });
 
@@ -265,11 +269,11 @@ describe("students can only read results", () => {
 describe("staff only manage their own offerings", () => {
   it("404s another convenor's offering, for reads and writes", async () => {
     const demo = new Client(baseUrl);
-    await demo.login(DEMO_STAFF.uniId, DEMO_STAFF.password, "staff");
+    await demo.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
     const offering = await firstHref(demo, "/staff/", 'a[href^="/staff/offerings/"]');
 
     const other = new Client(baseUrl);
-    await other.login(OTHER_STAFF.uniId, OTHER_STAFF.password, "staff");
+    await other.login(OTHER_STAFF.uniId, OTHER_STAFF.password);
     expect((await other.get(offering)).status).toBe(404);
     const res = await other.post(`/api${offering.replace(/\/$/, "")}`, { _action: "delete" });
     expect(res.status).toBe(404);
@@ -278,7 +282,7 @@ describe("staff only manage their own offerings", () => {
 
   it("won't let a non-demo account reset the demo data", async () => {
     const other = new Client(baseUrl);
-    await other.login(OTHER_STAFF.uniId, OTHER_STAFF.password, "staff");
+    await other.login(OTHER_STAFF.uniId, OTHER_STAFF.password);
     expect((await other.post("/api/demo/reset", {})).status).toBe(403);
   });
 });
@@ -288,7 +292,7 @@ describe("live sync", () => {
     const student = new Client(baseUrl);
     await student.login(DEMO_STUDENT.uniId, DEMO_STUDENT.password);
     const staff = new Client(baseUrl);
-    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password, "staff");
+    await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
     const offering = await firstHref(staff, "/staff/", 'a[href^="/staff/offerings/"]');
 
     const stream = await fetch(new URL("/api/events", baseUrl), { headers: { cookie: student.cookie } });
