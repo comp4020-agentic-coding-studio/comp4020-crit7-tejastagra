@@ -8,10 +8,11 @@ or a browser.
 ```
 src/pages/, src/components/, src/layouts/   UI: render, no maths, no SQL
 src/lib/record.ts                            course rows -> what pages show, via grading/
-src/lib/forms.ts, src/lib/course-form.ts     form parsing with student-worded errors
+src/lib/forms.ts, src/lib/staff-forms.ts     form parsing with plainly worded errors
+src/lib/csv.ts                               class-list and marks CSV, line-numbered errors
 src/lib/format.ts                            how numbers read (GPA 3dp, marks 1dp)
 src/lib/auth/                                passwords, sessions, cookies
-src/lib/data/                                every DB read/write, scoped by student
+src/lib/data/                                every DB read/write, scoped by the logged-in user
 src/lib/grading/                             pure functions: scale, GPA, needed mark, planner
 src/lib/db.ts, src/lib/schema.ts             connection, migrations, schema
 ```
@@ -25,11 +26,14 @@ src/lib/db.ts, src/lib/schema.ts             connection, migrations, schema
   `grading/`, usually through `record.ts`, which only groups and sums inputs. Why: one implementation, one set of tests; a second copy of the
   formula in a template is how a GPA quietly drifts.
 - **Pages never write SQL.** They call `src/lib/data/`. Every data function
-  that touches courses or assessments takes the `studentId` and filters on
-  it, including updates and deletes (`where id = ? and student_id = ?`).
-  Why: stops one student editing another's course by changing an id in a URL.
-- **Reuse components.** Grade badges, the needed-mark panel, form fields and
-  cards live in `src/components/`. A second page that shows a grade uses
+  takes who is asking and filters on it, including updates and deletes:
+  student reads (`data/results.ts`) take the student's **uni ID** and match
+  `enrolments.uni_id`; staff functions (`data/staff.ts`) take the
+  **convenor id** and only touch offerings where `convenor_id` matches.
+  Why: stops a student reading another's results, or one convenor editing
+  another's course, by changing an id in a URL.
+- **Reuse components.** Grade badges, status chips, form fields and
+  course/offering cards live in `src/components/`. A second page that shows a grade uses
   `GradeBadge`, not new markup.
 - **Forms POST to `src/pages/api/...` and redirect with 303.** Errors come
   back as a `?error=` message rendered by the page. Parse input with the
@@ -105,7 +109,9 @@ second convenor with no offerings, used to test staff scoping. The demo data is 
 
 ## Live sync
 
-`/api/events` is kept from the starter (CI needs it). When a logged-in student
-changes their data, their other open tabs and devices get an event and
-refresh. Anonymous connections get the heartbeat only. One machine means one
+`/api/events` is kept from the starter (CI needs it). Writes call
+`notifyChanged(uniIds)`: when staff enter, release or grade anything, every
+affected student's open pages (and the convenor's own) get an event and
+offer a refresh; a student's own target or plan change reaches their other
+tabs and devices. Anonymous connections get the heartbeat only. One machine means one
 in-process event bus is enough (see `src/lib/events.ts`).

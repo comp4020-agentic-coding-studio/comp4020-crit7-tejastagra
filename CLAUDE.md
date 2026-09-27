@@ -44,7 +44,8 @@ its reason has stopped applying.
 - @docs/harness/ux-mobile.md — mobile-first layout, forms that work without
   JavaScript, accessibility, and the plain student-facing voice.
 - @docs/harness/visual-design.md — the university-site look measured from my
-  A2 site: exact colours, weights and spacing, full-width layout, one login.
+  A2 site: exact colours, weights and spacing, an 80% centred column, boxes
+  over tables, one login page and no sign-up.
 - @docs/harness/spec-and-process.md — which tests protect which promise,
   how to run them, commit discipline, and what to do when a change would
   break a check.

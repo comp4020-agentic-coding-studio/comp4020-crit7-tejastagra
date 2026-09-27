@@ -3,8 +3,9 @@
 ## Phone first
 
 - Write CSS for a 360px-wide screen first, then widen with `min-width`
-  media queries. Every feature (add a course, enter a mark, set a target,
-  plan a GPA) must be doable on a phone. Why: the release email gets opened
+  media queries. Every feature on both sides (students: read
+  results, set a target, run a what-if, plan a GPA; staff: set up items, enrol,
+  enter and release marks, set grades) must be doable on a phone. Why: the release email gets opened
   on a phone.
 - No wide tables for assessment lists: use stacked cards or
   definition lists that reflow. A table is fine only when it fits at 360px.
