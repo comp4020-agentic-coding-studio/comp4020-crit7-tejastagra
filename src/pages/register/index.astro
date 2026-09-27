@@ -1,0 +1,41 @@
+---
+import Field from "../../components/Field.astro";
+import Layout from "../../layouts/Layout.astro";
+
+if (Astro.locals.student) return Astro.redirect("/", 303);
+---
+
+<Layout title="Create an account">
+  <h1>Create an account</h1>
+  <p class="muted">
+    This is a prototype with its own accounts, separate from ANU's. Pick a new password, not your real ANU one.
+  </p>
+  <section class="card">
+    <form method="post" action="/api/register">
+      <Field
+        id="reg-uni-id"
+        label="Uni ID"
+        name="uniId"
+        required
+        pattern="[uU][0-9]{7}"
+        autocomplete="username"
+        autocapitalize="none"
+        placeholder="u1234567"
+        hint="A u followed by 7 digits."
+      />
+      <Field id="reg-name" label="Your name" name="name" required maxlength="80" autocomplete="name" />
+      <Field
+        id="reg-password"
+        label="Password"
+        name="password"
+        type="password"
+        required
+        minlength="8"
+        autocomplete="new-password"
+        hint="At least 8 characters."
+      />
+      <button type="submit" class="button-block">Create account</button>
+    </form>
+  </section>
+  <p>Already have one? <a href="/login/">Log in</a></p>
+</Layout>

@@ -1,0 +1,20 @@
+---
+// A labelled input. Every input in the app goes through this so none is
+// ever left without a label.
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"input"> {
+  label: string;
+  name: string;
+  hint?: string;
+}
+const { label, hint, id, name, ...rest } = Astro.props;
+const fieldId = id ?? `f-${name}-${Math.random().toString(36).slice(2, 8)}`;
+const hintId = hint ? `${fieldId}-hint` : undefined;
+---
+
+<div class="field">
+  <label for={fieldId}>{label}</label>
+  <input id={fieldId} name={name} aria-describedby={hintId} {...rest} />
+  {hint && <span class="hint" id={hintId}>{hint}</span>}
+</div>

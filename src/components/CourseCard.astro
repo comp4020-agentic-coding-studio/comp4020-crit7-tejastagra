@@ -1,0 +1,36 @@
+---
+// One course in a list: the whole card links to its breakdown.
+import type { CourseView } from "../lib/record";
+import { fmtPercent } from "../lib/format";
+import GradeBadge from "./GradeBadge.astro";
+
+interface Props {
+  view: CourseView;
+  showNeeded?: boolean;
+}
+const { view, showNeeded = false } = Astro.props;
+const { course, releasedGrade, trackingGrade, needed, standing } = view;
+
+let meta = `${course.units} units`;
+if (view.inProgress) {
+  meta += standing.averageSoFar === null ? " · nothing marked yet" : ` · ${fmtPercent(standing.averageSoFar)} so far`;
+}
+let neededLine: string | null = null;
+if (showNeeded && needed) {
+  if (needed.status === "possible") neededLine = `Need ${fmtPercent(needed.neededPercent!)} on the rest`;
+  else if (needed.status === "secured") neededLine = "Target secured";
+  else neededLine = "Target out of reach";
+}
+---
+
+<li>
+  <a class="course-card" href={`/courses/${course.id}/`}>
+    <span class="info">
+      <span class="code">{course.code}</span>
+      <span class="title">{course.title}</span>
+      <span class="meta">{meta}{neededLine && <> · <strong>{neededLine}</strong></>}</span>
+    </span>
+    {releasedGrade && <GradeBadge grade={releasedGrade} />}
+    {!releasedGrade && trackingGrade && <GradeBadge grade={trackingGrade} tracking />}
+  </a>
+</li>

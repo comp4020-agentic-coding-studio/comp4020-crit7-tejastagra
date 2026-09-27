@@ -1,0 +1,12 @@
+---
+import CourseForm from "../../../components/CourseForm.astro";
+import Layout from "../../../layouts/Layout.astro";
+---
+
+<Layout title="Add a course">
+  <h1>Add a course</h1>
+  <p class="muted">Add a course you've finished (with its grade) or one you're doing now.</p>
+  <section class="card">
+    <CourseForm action="/api/courses" submitLabel="Add course" idPrefix="new" />
+  </section>
+</Layout>

@@ -1,0 +1,125 @@
+---
+// Every page's shell: head, header, the tab-bar nav, flash messages from a
+// form redirect (?error= / ?notice=), and live sync across devices.
+import Alert from "../components/Alert.astro";
+import "../styles.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Your ANU results archive and GPA planner." } = Astro.props;
+const student = Astro.locals.student;
+const path = Astro.url.pathname;
+const error = Astro.url.searchParams.get("error");
+const notice = Astro.url.searchParams.get("notice");
+
+const icons = {
+  home: "M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  archive: "M4 4h16v4H4zM5 8h14v12H5zM10 12h4",
+  planner: "M4 20V10M10 20V4M16 20v-7M22 20H2",
+  about: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-5M12 8h.01",
+  login: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3",
+};
+
+const tabs = student
+  ? [
+      { href: "/", label: "Home", icon: icons.home, match: (p: string) => p === "/" },
+      {
+        href: "/archive/",
+        label: "Archive",
+        icon: icons.archive,
+        match: (p: string) => p.startsWith("/archive") || p.startsWith("/courses"),
+      },
+      { href: "/planner/", label: "Planner", icon: icons.planner, match: (p: string) => p.startsWith("/planner") },
+      { href: "/readme/", label: "About", icon: icons.about, match: (p: string) => p.startsWith("/readme") },
+    ]
+  : [
+      { href: "/", label: "Home", icon: icons.home, match: (p: string) => p === "/" },
+      {
+        href: "/login/",
+        label: "Log in",
+        icon: icons.login,
+        match: (p: string) => p.startsWith("/login") || p.startsWith("/register"),
+      },
+      { href: "/readme/", label: "About", icon: icons.about, match: (p: string) => p.startsWith("/readme") },
+    ];
+---
+
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#1b1b1f" />
+    <title>{title} · ANU Grades</title>
+  </head>
+  <body data-signed-in={student ? "" : undefined}>
+    <header class="site-header">
+      <a class="brand" href="/">ANU <span>Grades</span></a>
+      {
+        student && (
+          <form method="post" action="/api/logout">
+            <span class="small visually-hidden">Logged in as {student.name}</span>
+            <button class="link-button" type="submit">
+              Log out
+            </button>
+          </form>
+        )
+      }
+    </header>
+    <nav class="tabs" aria-label="Main">
+      {
+        tabs.map((t) => (
+          <a href={t.href} aria-current={t.match(path) ? "page" : undefined}>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d={t.icon} />
+            </svg>
+            {t.label}
+          </a>
+        ))
+      }
+    </nav>
+    <main id="main">
+      {error && <Alert kind="error">{error}</Alert>}
+      {notice && <Alert kind="notice">{notice}</Alert>}
+      <slot />
+    </main>
+    {
+      student && (
+        <div class="sync-banner" role="status" hidden>
+          <span>Your grades changed on another device.</span>
+          <button type="button" data-refresh>
+            Refresh
+          </button>
+        </div>
+      )
+    }
+    <script>
+      // Live sync: when this student's data changes in another tab or on
+      // another device, offer a refresh rather than reloading under them
+      // (they might be halfway through typing a mark).
+      if (document.body.hasAttribute("data-signed-in")) {
+        const banner = document.querySelector<HTMLElement>(".sync-banner");
+        const source = new EventSource("/api/events");
+        source.addEventListener("changed", () => {
+          if (banner) banner.hidden = false;
+        });
+        document.querySelector("[data-refresh]")?.addEventListener("click", () => {
+          // drop any one-off ?notice= so it doesn't show again
+          location.replace(location.pathname + location.hash);
+        });
+      }
+    </script>
+  </body>
+</html>

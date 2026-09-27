@@ -1,0 +1,41 @@
+---
+import Field from "../../components/Field.astro";
+import Layout from "../../layouts/Layout.astro";
+import { DEMO_PASSWORD, DEMO_UNI_ID } from "../../lib/data";
+import { safeNext } from "../../lib/forms";
+
+const next = safeNext(Astro.url.searchParams.get("next"), "/");
+if (Astro.locals.student) return Astro.redirect(next, 303);
+---
+
+<Layout title="Log in">
+  <h1>Log in</h1>
+  <section class="card">
+    <form method="post" action="/api/login">
+      <input type="hidden" name="next" value={next} />
+      <Field
+        id="login-uni-id"
+        label="Uni ID"
+        name="uniId"
+        required
+        autocomplete="username"
+        autocapitalize="none"
+        placeholder="u1234567"
+      />
+      <Field
+        id="login-password"
+        label="Password"
+        name="password"
+        type="password"
+        required
+        autocomplete="current-password"
+      />
+      <button type="submit" class="button-block">Log in</button>
+    </form>
+  </section>
+  <p>New here? <a href="/register/">Create an account</a></p>
+  <p class="muted small">
+    Demo student: <code>{DEMO_UNI_ID}</code> / <code>{DEMO_PASSWORD}</code>. This is a mock of ANU login, not the real
+    thing, so don't reuse your real ANU password.
+  </p>
+</Layout>

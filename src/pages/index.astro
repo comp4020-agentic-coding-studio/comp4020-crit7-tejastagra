@@ -1,53 +1,159 @@
 ---
-import { listMessages } from "../lib/db";
-import "../styles.css";
+// Home: a welcome and login for visitors; the dashboard once logged in.
+import Alert from "../components/Alert.astro";
+import CourseCard from "../components/CourseCard.astro";
+import Field from "../components/Field.astro";
+import Stat from "../components/Stat.astro";
+import Layout from "../layouts/Layout.astro";
+import { DEMO_PASSWORD, DEMO_UNI_ID, listCourses } from "../lib/data";
+import { fmtGpa, plural } from "../lib/format";
+import { summarise } from "../lib/record";
 
-const messages = listMessages();
+const student = Astro.locals.student;
+const summary = student ? summarise(student, listCourses(student.id)) : null;
+const current = summary?.courses.filter((v) => v.inProgress) ?? [];
+const latest = summary?.semesters.find((s) => !s.inProgress);
+const plan = summary?.plan;
 ---
 
-<!doctype html>
-<html lang="en-AU">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>COMP4020 prototype</title>
-  </head>
-  <body>
-    <nav aria-label="site">
-      <a href="/">Guestbook</a>
-      <a href="/readme/">About</a>
-    </nav>
-    <main>
-      <h1>Guestbook</h1>
-      <p>
-        A minimal full-stack starter: messages live in SQLite on the machine's
-        volume (state survives a reload and a redeploy), and new messages
-        appear in every open tab over a server-sent-events stream — open this
-        page twice and sign it in one. Replace all of this with your own
-        prototype.
-      </p>
-      <form method="post" action="/api/messages">
-        <label for="body">Leave a message</label>
-        <input id="body" name="body" required maxlength="500" />
-        <button>Sign</button>
-      </form>
-      <ul id="messages">
-        {messages.map((message) => <li>{message.body}</li>)}
-      </ul>
-    </main>
-    <script>
-      // The live half of the demo: subscribe to the SSE stream and prepend
-      // messages as they arrive. The form itself needs none of this — its
-      // POST + redirect re-renders the submitting tab from SQLite; this
-      // stream is how every other tab finds out.
-      const list = document.querySelector("#messages");
-      const source = new EventSource("/api/events");
-      source.addEventListener("message", (event) => {
-        const message = JSON.parse(event.data);
-        const item = document.createElement("li");
-        item.textContent = message.body;
-        list?.prepend(item);
-      });
-    </script>
-  </body>
-</html>
+<Layout title={student ? "Dashboard" : "Your grades, in one place"}>
+  {
+    !student && (
+      <>
+        <h1>Your grades, in one place</h1>
+        <p>
+          Every released result with its full assessment breakdown, your GPA worked out the way ANU does it, and
+          a plain answer to "what do I need on the final?"
+        </p>
+        <section class="card" aria-labelledby="login-heading">
+          <h2 id="login-heading" style="margin-top:0">
+            Log in
+          </h2>
+          <form method="post" action="/api/login">
+            <input type="hidden" name="next" value="/" />
+            <Field
+              id="home-uni-id"
+              label="Uni ID"
+              name="uniId"
+              required
+              autocomplete="username"
+              autocapitalize="none"
+              placeholder="u1234567"
+            />
+            <Field
+              id="home-password"
+              label="Password"
+              name="password"
+              type="password"
+              required
+              autocomplete="current-password"
+            />
+            <button type="submit" class="button-block">
+              Log in
+            </button>
+          </form>
+          <p class="small" style="margin-top:0.75rem">
+            New here? <a href="/register/">Create an account</a>
+          </p>
+        </section>
+        <Alert kind="info">
+          <strong>Just looking?</strong> Log in as the demo student: uni ID <code>{DEMO_UNI_ID}</code>, password{" "}
+          <code>{DEMO_PASSWORD}</code>. It's a mock of ANU login with illustrative data, not the real ISIS.
+        </Alert>
+      </>
+    )
+  }
+  {
+    student && summary && (
+      <>
+        <h1>Hi, {student.name.split(" ")[0]}</h1>
+        <dl class="stats">
+          <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
+          <Stat
+            label="Target GPA"
+            value={student.targetGpa === null ? "—" : student.targetGpa.toFixed(3)}
+            note={student.targetGpa === null ? "not set" : "your goal"}
+          />
+          <Stat
+            label="If you hit targets"
+            value={fmtGpa(summary.projectedGpa)}
+            note={summary.projectedGpa === null ? "set course targets" : "this semester"}
+          />
+          <Stat
+            label="Units passed"
+            value={String(summary.creditUnits)}
+            note={`of ${summary.degreeUnits}`}
+          />
+        </dl>
+
+        {plan && (
+          <section class="card" aria-labelledby="plan-heading">
+            <h2 id="plan-heading" style="margin-top:0">
+              Your target GPA
+            </h2>
+            {plan.status === "possible" && (
+              <p>
+                To reach <strong>{plan.target.toFixed(3)}</strong> you need to average{" "}
+                <strong>{plan.neededAverage!.toFixed(2)} grade points</strong> across your remaining{" "}
+                {plural(plan.remainingUnits, "unit")}.
+              </p>
+            )}
+            {plan.status === "secured" && <p>You've already secured {plan.target.toFixed(3)}. Keep it up.</p>}
+            {plan.status === "out-of-reach" && (
+              <p>
+                {plan.target.toFixed(3)} is out of reach: straight HDs from here would reach{" "}
+                {fmtGpa(plan.bestPossible)}.
+              </p>
+            )}
+            {plan.status === "no-units" && <p>You have no units left to change your GPA.</p>}
+            <a href="/planner/">Open the planner</a>
+          </section>
+        )}
+
+        <h2>This semester</h2>
+        {current.length === 0 ? (
+          <p class="muted">No courses in progress. Add one to plan what you need.</p>
+        ) : (
+          <ul class="course-list">
+            {current.map((v) => (
+              <CourseCard view={v} showNeeded />
+            ))}
+          </ul>
+        )}
+        <p>
+          <a class="button button-secondary" href="/courses/new/">
+            Add a course
+          </a>
+        </p>
+
+        {latest && (
+          <>
+            <h2>Latest results: {latest.label}</h2>
+            <ul class="course-list">
+              {latest.courses.map((v) => (
+                <CourseCard view={v} />
+              ))}
+            </ul>
+            <p>
+              <a href="/archive/">See your full archive</a>
+            </p>
+          </>
+        )}
+
+        {student.uniId === DEMO_UNI_ID && (
+          <section class="card" aria-labelledby="demo-heading">
+            <h2 id="demo-heading" style="margin-top:0">
+              Demo account
+            </h2>
+            <p class="small">Everyone shares this account. Put it back to its starting history any time.</p>
+            <form method="post" action="/api/demo/reset">
+              <button type="submit" class="button-secondary">
+                Reset demo data
+              </button>
+            </form>
+          </section>
+        )}
+      </>
+    )
+  }
+</Layout>

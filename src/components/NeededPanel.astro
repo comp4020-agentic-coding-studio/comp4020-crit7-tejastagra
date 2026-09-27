@@ -1,0 +1,87 @@
+---
+// "What do I need?" for one course, in plain words
+// (docs/harness/ux-mobile.md). All numbers come from grading/.
+import type { Assessment } from "../lib/data/courses";
+import { fmtMark, fmtPercent, neededScore } from "../lib/format";
+import { gradeForMark, type NeededResult } from "../lib/grading";
+import GradeBadge from "./GradeBadge.astro";
+
+interface Props {
+  needed: NeededResult;
+  assessments: Assessment[];
+}
+const { needed, assessments } = Astro.props;
+const { status, target, standing, neededPercent } = needed;
+const targetGrade = gradeForMark(target);
+const remaining = assessments.filter((a) => a.score === null);
+const bestGrade = gradeForMark(standing.maxPossible);
+---
+
+<section class={`card needed status-${status}`} aria-labelledby="needed-heading">
+  <h2 id="needed-heading" style="margin-top:0">
+    To finish on {fmtMark(target)} <GradeBadge grade={targetGrade} />
+  </h2>
+  {
+    status === "possible" && (
+      <>
+        <p class="big-number">{fmtPercent(neededPercent!)}</p>
+        <p>
+          is the average you need across the remaining {fmtPercent(standing.weightRemaining)} of the course.
+        </p>
+        {remaining.length > 0 && (
+          <ul>
+            {remaining.map((a) => (
+              <li>
+                <strong>{neededScore(neededPercent!, a.outOf)}</strong> / {fmtMark(a.outOf)} on {a.name}
+                <span class="muted small"> ({fmtMark(a.weight)}%)</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {remaining.length > 1 && (
+          <p class="muted small">
+            That's one way to split it: doing better on one lets you do worse on another, as long as the
+            weighted average holds.
+          </p>
+        )}
+      </>
+    )
+  }
+  {
+    status === "secured" && (
+      <p>
+        <strong>Already locked in.</strong> You've banked {fmtMark(standing.secured)} course marks, so you finish on
+        at least {fmtMark(target)} even if you score zero on everything left. Nice.
+      </p>
+    )
+  }
+  {
+    status === "out-of-reach" && (
+      <p>
+        <strong>Out of reach, sorry.</strong> Even full marks on everything left gets you to{" "}
+        {fmtMark(standing.maxPossible)} at most ({bestGrade}). Try a target of {fmtMark(Math.floor(standing.maxPossible))} or
+        lower.
+      </p>
+    )
+  }
+  {
+    status === "finished" && (
+      <p>
+        <strong>Everything's marked.</strong> You finished on {fmtMark(standing.secured)}, which is{" "}
+        {fmtMark(target - standing.secured)} short of this target.
+      </p>
+    )
+  }
+  {
+    !standing.weightsSumTo100 && (
+      <p class="muted small">
+        Heads up: this course's weights add up to {fmtMark(standing.totalWeight)}%, not 100%. The maths above uses
+        what's entered, so add or fix assessments for a true picture.
+      </p>
+    )
+  }
+  <p class="muted small">
+    Assumes every remaining item is marked out of its full weight. Hurdles, scaling and rounding are up to your
+    convenor, and the released grade is what counts.
+  </p>
+</section>

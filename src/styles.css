@@ -1,40 +1,638 @@
-body {
-  margin: 0;
-  padding: 2rem;
-  font-family: system-ui, sans-serif;
-  line-height: 1.6;
-  color: #1a1a1a;
+/* Mobile first (docs/harness/ux-mobile.md): everything below is written for
+   a ~360px phone; wider screens only get more room via min-width queries. */
+
+:root {
+  --ink: #1b1b1f;
+  --muted: #5b5b66;
+  --line: #dcdce3;
+  --bg: #f6f5f1;
+  --card: #ffffff;
+  --accent: #8a5a00; /* ANU gold, darkened for text contrast */
+  --accent-soft: #f7ecd4;
+  --brand: #1b1b1f;
+  --good: #1f6b3a;
+  --good-soft: #e3f3e8;
+  --warn: #8a4b00;
+  --warn-soft: #fcefdc;
+  --bad: #a3222a;
+  --bad-soft: #fbe5e6;
+  --radius: 12px;
+  --tap: 44px;
+  --nav-h: 64px;
+  color-scheme: light;
 }
 
-main {
-  max-width: 40rem;
-  margin: 0 auto;
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  /* room for the bottom tab bar on phones */
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
 }
 
 a {
-  color: #0b5fff;
+  color: var(--accent);
 }
 
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.6rem;
+}
+h2 {
+  font-size: 1.2rem;
+  margin-top: 1.75rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+/* --- header and navigation ------------------------------------------- */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: var(--brand);
+  color: #fff;
+}
+.brand {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.brand span {
+  color: #f2c14e;
+}
+.site-header form {
+  margin: 0;
+}
+.site-header .link-button {
+  color: #fff;
+}
+
+/* the nav is a bottom tab bar on phones, where thumbs reach */
+.tabs {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabs a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--nav-h);
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.tabs a svg {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 2px;
+}
+.tabs a[aria-current="page"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2rem;
+}
+
+/* --- building blocks -------------------------------------------------- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.stack > * + * {
+  margin-top: 0.75rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 0.875rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+.stat dt {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.stat dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.stat dd small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.alert {
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid;
+}
+.alert-error {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+.alert-notice {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+.alert-info {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+/* grade badges: the letters always show, colour is only a second signal */
+.grade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 2px solid currentColor;
+  white-space: nowrap;
+}
+.grade-HD {
+  color: #0d5c46;
+  background: #dff3ec;
+}
+.grade-D {
+  color: #1d4f91;
+  background: #e2ecf9;
+}
+.grade-CR {
+  color: #5b3a8c;
+  background: #ece5f7;
+}
+.grade-P,
+.grade-PS {
+  color: #7a4d00;
+  background: #fbefd6;
+}
+.grade-N,
+.grade-NCN,
+.grade-WN {
+  color: var(--bad);
+  background: var(--bad-soft);
+}
+.grade-other {
+  color: var(--muted);
+  background: #eeeef2;
+}
+.grade.tracking {
+  border-style: dashed;
+  background: transparent;
+}
+
+/* course cards: whole card is a tap target */
+.course-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.course-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--tap);
+  padding: 0.85rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+.course-card:hover,
+.course-card:focus-visible {
+  border-color: var(--accent);
+}
+.course-card .info {
+  flex: 1;
+  min-width: 0;
+}
+.course-card .code {
+  font-weight: 700;
+}
+.course-card .title {
+  display: block;
+  color: var(--muted);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.course-card .meta {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.semester-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* needed-mark panel */
+.needed {
+  border-left: 4px solid var(--accent);
+}
+.needed.status-secured {
+  border-left-color: var(--good);
+}
+.needed.status-out-of-reach,
+.needed.status-finished {
+  border-left-color: var(--bad);
+}
+.big-number {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: #ececf1;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+.progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+}
+.progress .secured {
+  background: var(--good);
+}
+.progress .remaining {
+  background: repeating-linear-gradient(45deg, #d8d8e0 0 6px, #ececf1 6px 12px);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* assessments */
+.assessment {
+  scroll-margin-top: 1rem;
+}
+.assessment-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.assessment-head h3 {
+  margin: 0;
+}
+.score-form {
+  display: flex;
+  align-items: end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.score-form .field {
+  flex: 1;
+  min-width: 8rem;
+  margin: 0;
+}
+
+/* --- forms ------------------------------------------------------------ */
+
 form {
+  margin: 0;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.9rem;
+}
+.field label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.field .hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 0.75rem;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.5rem 0.7rem;
+  /* 16px stops iOS zooming into the field on focus */
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid #9c9ca8;
+  border-radius: 8px;
+}
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #f2c14e;
+  outline-offset: 2px;
+}
+
+button,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.button-secondary {
+  color: var(--ink);
+  background: #fff;
+  border-color: #9c9ca8;
+}
+.button-danger {
+  color: var(--bad);
+  background: #fff;
+  border-color: var(--bad);
+}
+.button-block {
+  width: 100%;
+}
+.link-button {
+  min-height: var(--tap);
+  padding: 0 0.25rem;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+.actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  margin-block: 1.5rem;
 }
 
-input {
-  flex: 1;
-  min-width: 12rem;
-  padding: 0.4rem 0.6rem;
-  font: inherit;
+/* target chips: radio buttons styled as big tappable pills */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.9rem;
+}
+.chips legend {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  padding: 0;
+}
+.chips label {
+  position: relative;
+}
+.chips input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.chips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 1rem;
+  border: 1px solid #9c9ca8;
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+}
+.chips input:checked + span {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.chips input:focus-visible + span {
+  outline: 3px solid #f2c14e;
+  outline-offset: 2px;
 }
 
-button {
-  padding: 0.4rem 1rem;
-  font: inherit;
+details {
+  margin-top: 0.5rem;
+}
+summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 500;
+}
+details[open] summary {
+  margin-bottom: 0.5rem;
 }
 
-#messages {
-  padding-inline-start: 1.2rem;
+.sync-banner {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: calc(var(--nav-h) + 0.75rem + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
+}
+.sync-banner[hidden] {
+  display: none;
+}
+.sync-banner button {
+  background: #f2c14e;
+  color: var(--ink);
+  border-color: #f2c14e;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* readme page */
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
+.prose pre {
+  overflow-x: auto;
+}
+.prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--line);
+  padding: 0.3rem 0.5rem;
+}
+
+/* --- wider screens ---------------------------------------------------- */
+
+@media (min-width: 720px) {
+  body {
+    padding-bottom: 0;
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  .site-header {
+    padding: 0.75rem 1.5rem;
+  }
+  /* the tab bar moves up into the header row */
+  .tabs {
+    position: static;
+    justify-content: center;
+    gap: 0.25rem;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 1rem;
+  }
+  .tabs a {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 0.4rem;
+    min-height: 48px;
+    padding: 0 1rem;
+    font-size: 0.95rem;
+  }
+  .tabs a svg {
+    margin: 0;
+    width: 18px;
+    height: 18px;
+  }
+  .tabs a[aria-current="page"] {
+    box-shadow: inset 0 -3px 0 var(--accent);
+  }
+  .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .sync-banner {
+    left: auto;
+    bottom: 1rem;
+    max-width: 26rem;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
 }

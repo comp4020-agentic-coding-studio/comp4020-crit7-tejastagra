@@ -1,0 +1,18 @@
+---
+// A grade, always as its letters, with its full name for screen readers.
+// `tracking` marks a grade that isn't released yet (dashed outline).
+import { GRADE_NAMES, type Grade } from "../lib/grading";
+
+interface Props {
+  grade: Grade;
+  tracking?: boolean;
+}
+const { grade, tracking = false } = Astro.props;
+const known = ["HD", "D", "CR", "P", "PS", "N", "NCN", "WN"].includes(grade);
+const label = `${tracking ? "Tracking at " : ""}${GRADE_NAMES[grade]}`;
+---
+
+<span class:list={["grade", known ? `grade-${grade}` : "grade-other", { tracking }]} title={label}>
+  <span aria-hidden="true">{grade}</span>
+  <span class="visually-hidden">{label}</span>
+</span>
