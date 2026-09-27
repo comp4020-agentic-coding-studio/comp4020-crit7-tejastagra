@@ -42,13 +42,18 @@ Radius 6.75px on inputs and buttons; **cards are square**.
 
 ## Layout
 
-- **Use the full width.** Content spans the window with a 2rem gutter
-  (capped at 90rem so lines never get absurd). Put things side by side in
-  grids instead of stacking them, so pages need little scrolling: stats in
-  a row, tables in an auto-fill grid, a main column and a side column on
-  detail pages. On phones everything stacks into one column.
-- **Don't look complicated:** at most two columns of content (plus the
-  stat row), generous gaps (27px), no nested boxes inside boxes.
+- **About 80% of the window, centred.** Content sits in a centred column
+  80% of the window wide (capped at 80rem) on screens 1000px and wider;
+  below that it's the full width minus a 1rem/2rem gutter. Not 100%: a
+  full-bleed page with everything side by side was tried and read as too
+  busy.
+- **Functional, not busy.** Each page shows what the user came to do and
+  nothing else: no marketing blocks ("What you can do"), no decorative
+  hero, no duplicate summaries of what another page already shows. At most
+  two columns (main + side) and never more than one row of stats. When in
+  doubt, leave it out.
+- **Centred reading pages.** The About page (the README) is a centred
+  column of readable width (~48rem).
 - **No vertical rule** down the page, and no coloured accent bars on any
   box. Boxes are one even 1px `--divider` border.
 - **Header:** same background as the page, no bottom border; crest mark +
@@ -60,8 +65,8 @@ Radius 6.75px on inputs and buttons; **cards are square**.
 - **One login page** for everyone. The account's role decides where it
   lands (students to the dashboard, staff to My courses) and what the nav
   shows. There is no separate staff login.
-- **Landing hero:** dark scrim, large white title in weight 400, the 4rem
-  gold underline. Keep it short so the login is visible without scrolling.
+- **Logged-out `/`:** just the login, in a narrow centred card. No hero,
+  no feature list.
 - **Tables:** gold header row with dark text, weight 700; striped rows;
   cells padded 9px 13.5px.
 - **Buttons:** gold fill with dark text, weight 600; secondary is a gold
