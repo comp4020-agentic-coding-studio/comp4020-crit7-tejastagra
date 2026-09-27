@@ -18,8 +18,13 @@ commit that changes code.
 Tests say what the app promises (a GPA, a needed mark, a page that survives a
 reload, a student who can't see another's course), not how it's built, so
 they survive a refactor. When you add a page, add it to `spec/routes.ts` if
-it's public, or to the logged-in route list in `spec/flows.test.ts` if it's
-behind login, so the accessibility checks cover it.
+it's public, or to `AUTHED_ROUTES` in `spec/flows.test.ts` if it's behind
+login, so the accessibility checks cover it. Drive the app with the
+`Client` in `spec/http.ts` (it carries the session cookie and the Origin
+header Astro's CSRF check needs).
+
+For UI changes, look at the page at 390px wide logged in as the demo
+student (u7654321 / demo1234) and check there's no horizontal scroll.
 
 ## When a change would break a check
 
