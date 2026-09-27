@@ -46,8 +46,47 @@ fails in a non-TTY agent shell: split such a change into an add migration
 and a drop migration. Never edit an existing migration or the database by hand: the deployed volume
 outlives every deploy. Migrations run at boot (`src/lib/db.ts`).
 
-Marks are stored as `score` out of `outOf` (how students actually see them,
+### The data model
+
+```
+users            id, uni_id, name, role (student | staff), password_hash,
+                 target_gpa, degree_units   (the last two: student planning)
+auth_sessions    token_hash, user_id, expires_at
+offerings        a course in one session: code, title, units, year, term,
+                 convenor_id -> users (staff)
+assessment_items offering_id, name, weight, out_of, position, released
+enrolments       offering_id, uni_id, name, grade (null until released),
+                 target_mark (the only student-writable field)
+marks            item_id, enrolment_id, score
+```
+
+Enrolments are keyed by **uni ID, not user id**, the way the university
+does it: staff can enrol students and upload marks before the student has
+ever logged in, and a student sees every enrolment matching their uni ID.
+
+Marks are stored as `score` out of `out_of` (how students actually see them,
 e.g. 17/20); percentages are derived. Weights are percentages of the course.
+
+### Who can do what
+
+- **Staff** (role `staff`): everything under `/staff/` and `/api/staff/`,
+  only for offerings where `convenor_id` is their id. Staff accounts are
+  seeded; there's no staff sign-up.
+- **Students** (role `student`): read their enrolments, **released** items'
+  marks, and released grades. They can write only their own `target_mark`
+  per enrolment and `target_gpa`/`degree_units`. There are no student
+  endpoints that change results. Unreleased items look unmarked to a
+  student, even if staff have entered marks.
+- Student self-registration exists only because this is a mock of ANU
+  login: registering claims a uni ID. A real deployment would use ANU's
+  single sign-on. Say so in the UI and README.
+
+### What-if scenarios
+
+A student's "what if I get x/y" is a GET form: the hypothetical scores ride
+in the query string, the server computes the result with `grading/`, and
+nothing is stored. Why: a scenario must never be mistaken for, or
+overwrite, an official mark, and it works without JS.
 
 ## Auth
 
@@ -56,9 +95,11 @@ Username (ANU uni id, e.g. u1234567) + password, hashed with scrypt from
 only a SHA-256 of the token is stored. This is a mock of ANU login, not a
 replacement for it, and the UI says so. No new auth dependencies.
 
-A seeded demo student (see `src/lib/data/seed.ts`) exists so a visitor or
-tutor can see a full history without typing one in. The demo data is
-illustrative, not a real transcript.
+Seeded demo accounts (see `src/lib/data/seed.ts`) let a visitor or tutor see
+both sides without typing anything in: a demo student with a full history,
+a demo convenor who runs all of that student's courses (with a handful of
+classmates in each), and a second convenor with no offerings, used to test
+staff scoping. The demo data is illustrative, not a real transcript.
 
 ## Live sync
 

@@ -30,8 +30,9 @@ glance, but always with the letters.
   Don't use ANU's real crest or logo: this is a prototype, not the
   official system.
 - **Nav contents:** logged out, only **Log in** and **About**. There's no
-  "Home" item; the lockup links to `/`. Logged in: Dashboard, Archive,
-  Planner, About, and Log out.
+  "Home" item; the lockup links to `/`. Students: Dashboard, Archive,
+  Planner, About, Log out. Staff: My courses, About, Log out. Staff log in
+  from a separate staff login page, linked from the student one.
 - **Content column:** max ~48rem, with a thin gold vertical rule down its
   left edge on screens 720px and wider (hidden on phones).
 - **Landing (logged out `/`):** a dark banner hero with a large white title
@@ -40,8 +41,10 @@ glance, but always with the letters.
   text.
 - **Tables:** gold header row, lightly striped rows. Allowed only where they
   fit at 360px (e.g. the archive's code / course / units / grade).
-- **Cards:** near-square corners (6px), a thin gold-tinted border, a bronze
-  title.
+- **Cards and boxes are clean, like A2's:** near-square corners (6px), one
+  thin even border on all four sides, a bronze title. **No coloured accent
+  bars** on the left, right or top of any box (cards, alerts, stats,
+  panels). Status is carried by the words and a small badge, not a stripe.
 - **Footer:** divider lines, a short "prototype, not the official record"
   note.
 - **Type:** Public Sans (Google Fonts) with system fallbacks, 18px base.

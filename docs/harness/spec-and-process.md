@@ -5,8 +5,8 @@
 | Spec line | Protected by |
 | --- | --- |
 | loads at its `*.fly.dev` URL by the cutoff | deploy by hand (`flyctl deploy --remote-only --ha=false -a comp4020-crit7-tejastagra`), then `/comp4020:preflight` |
-| models a slice of a real ANU system, wired end to end | `spec/grading.test.ts` (ANU rules), `spec/flows.test.ts` (login → data → pages over HTTP) |
-| core flow persists across a reload | `spec/flows.test.ts`: add a course/mark/target, re-fetch, still there |
+| models a slice of a real ANU system, wired end to end | `spec/grading.test.ts` (ANU rules), `spec/flows.test.ts` (staff uploads and releases → student sees it, over HTTP) |
+| core flow persists across a reload | `spec/flows.test.ts`: staff create an offering, upload marks, release, grade; each re-fetched fresh |
 | repo shows the process | commits as we go, `PROCESS.md`, `reflections/crit-7.md`, `pnpm check:evidence` |
 | account for how you directed, grounded, corrected | `PROCESS.md`, citing commits; this harness |
 

@@ -1,9 +1,11 @@
 # CLAUDE.md — ANU Grades: a results archive and GPA planner
 
 This is the harness for crit 7 ("Build the ANU system you wish existed"). The
-app is the grade-release system a student actually wants: log in, see every
-released result with its assessment breakdown, and plan forward, both for the
-degree (target GPA) and inside each course (what do I need on the rest).
+app is a grade-release system with two sides. **Staff** convene course
+offerings: they set up assessments, enrol students, upload marks, release
+them, and set final grades. **Students** log in and see every released
+result with its assessment breakdown, and plan forward: a target GPA for the
+degree, and inside each course a target and "what if I get x/y on this?"
 
 Every rule below has a reason written next to it. If you can't say why a rule
 exists, ask before dropping it; if a rule is in your way, that is not evidence
@@ -17,8 +19,11 @@ its reason has stopped applying.
    these numbers.
 2. **The full feature set works on a phone.** Students check results on their
    phone the moment the release email lands. Nothing is desktop-only.
-3. **A student only ever sees their own data.** Every query that touches
-   courses or assessments is scoped by the logged-in student's id.
+3. **Results are official: staff write them, students only read them.** A
+   student can never create, edit or delete a course, assessment, mark or
+   grade, and only sees marks their convenor has released. A staff member
+   only manages offerings they convene. Every query is scoped by the
+   logged-in user (student: their uni ID; staff: their convenor id).
 
 ## Fixed by the course (do not change)
 
