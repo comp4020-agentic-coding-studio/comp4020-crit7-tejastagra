@@ -13,12 +13,13 @@ const baseUrl = inject("baseUrl");
 const DEMO_STUDENT = { uniId: "u7654321", password: "demo1234" };
 const DEMO_STAFF = { uniId: "u1000001", password: "staff1234" };
 const OTHER_STAFF = { uniId: "u1000002", password: "staff1234" };
+// seeded classmates: provisioned student accounts (there's no sign-up)
+const CLASSMATE = { uniId: "u5512001", password: "student1234" };
+const OTHER_CLASSMATE = { uniId: "u5512002", password: "student1234" };
 
 // Logged-in pages, which the invariants (public routes only) can't reach.
 const STUDENT_ROUTES = ["/", "/archive/", "/planner/"];
 const STAFF_ROUTES = ["/staff/"];
-
-const uniqueUniId = () => `u${String(Date.now() + Math.floor(Math.random() * 1e6)).slice(-7)}`;
 
 async function firstHref(c: Client, page: string, selector: string): Promise<string> {
   const href = new JSDOM(await c.html(page)).window.document.querySelector(selector)?.getAttribute("href");
@@ -67,10 +68,18 @@ describe("login and roles", () => {
     expect(Client.location(res2, baseUrl).pathname).toBe("/staff/");
   });
 
-  it("shows only Log in and About in the logged-out nav", async () => {
+  it("shows no nav links when logged out: the page is the login", async () => {
     const doc = new JSDOM(await new Client(baseUrl).html("/")).window.document;
-    const links = [...doc.querySelectorAll("nav a:not(.lockup)")].map((a) => a.textContent?.trim());
-    expect(links).toEqual(["Log in", "About"]);
+    expect(doc.querySelectorAll("nav a:not(.lockup)")).toHaveLength(0);
+    expect(doc.querySelector('form[action="/api/login"]')).toBeTruthy();
+  });
+
+  it("has no sign-up: accounts are provisioned, not created by visitors", async () => {
+    const c = new Client(baseUrl);
+    expect((await c.get("/register/")).status).toBe(404);
+    const res = await c.post("/api/register", { uniId: "u7777777", name: "Anyone", password: "password123" });
+    expect(res.status).toBe(404);
+    expect(c.cookie).toBe("");
   });
 
   it("logs out", async () => {
@@ -140,7 +149,7 @@ describe("the demo student's archive follows the ANU GPA rules", () => {
 describe("staff release results; the student sees exactly what's released", () => {
   const staff = new Client(baseUrl);
   const student = new Client(baseUrl);
-  const uniId = uniqueUniId();
+  const uniId = CLASSMATE.uniId;
   let offering = ""; // /staff/offerings/<id>/
   let api = ""; // /api/staff/offerings/<id>
   let item1 = ""; // /api/staff/offerings/<id>/items/<id>
@@ -149,7 +158,7 @@ describe("staff release results; the student sees exactly what's released", () =
 
   beforeAll(async () => {
     await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
-    await student.post("/api/register", { uniId, name: "Test Student", password: "password123" });
+    await student.login(CLASSMATE.uniId, CLASSMATE.password);
   });
 
   it("staff create an offering", async () => {
@@ -183,7 +192,10 @@ describe("staff release results; the student sees exactly what's released", () =
   });
 
   it("the student sees the course on their dashboard, with nothing released yet", async () => {
-    studentCourse = await firstHref(student, "/", 'a[href^="/courses/"]');
+    const doc = new JSDOM(await student.html("/")).window.document;
+    const card = [...doc.querySelectorAll('a[href^="/courses/"]')].find((a) => a.textContent?.includes("COMP9999"));
+    expect(card, "COMP9999 should be on the dashboard").toBeTruthy();
+    studentCourse = card!.getAttribute("href")!;
     const text = textOf(await student.html(studentCourse));
     expect(text).toContain("COMP9999");
     expect(text).toContain("Not released");
@@ -211,11 +223,11 @@ describe("staff release results; the student sees exactly what's released", () =
 
   it("a what-if shows the final grade and GPA effect, and stores nothing", async () => {
     const itemId = item2.split("/").at(-1);
-    // 32 + 60 × 0.75 = 77 → D (6 points); the student has no other results
+    // 32 + 60 × 0.75 = 77 → D
     const text = textOf(await student.html(`${studentCourse}?w${itemId}=75`));
     expect(text).toContain("You'd finish on 77");
     expect(text).toContain("Distinction");
-    expect(text).toContain("from — to 6.000");
+    expect(text).toContain("Your career GPA would go from");
     // nothing stuck: a plain reload shows no scenario, and staff still see 90
     expect(textOf(await student.html(studentCourse))).not.toContain("You'd finish on");
   });
@@ -223,10 +235,11 @@ describe("staff release results; the student sees exactly what's released", () =
   it("staff release a final grade and the student's GPA counts it", async () => {
     await staff.post(item2, { _action: "release" });
     const res = await staff.post(api, { _action: "fill-grades" });
-    // 32 + 54 = 86 → HD
+    // 32 + 54 = 86 → HD, and COMP9999 moves to the archive with it
     expect(Client.location(res, baseUrl).searchParams.get("notice")).toContain("Filled 1 grade");
-    const text = textOf(await student.html("/archive/"));
-    expect(text).toContain("7.000");
+    const doc = new JSDOM(await student.html("/archive/")).window.document;
+    const card = [...doc.querySelectorAll(".course-card")].find((a) => a.textContent?.includes("COMP9999"));
+    expect(card?.textContent).toContain("HD");
   });
 
   it("the archive shows the now-finished course as a course box, not a table", async () => {
@@ -267,7 +280,7 @@ describe("students can only read results", () => {
 
   it("can't see another student's enrolment", async () => {
     const other = new Client(baseUrl);
-    await other.post("/api/register", { uniId: uniqueUniId(), name: "Nosy", password: "password123" });
+    await other.login(OTHER_CLASSMATE.uniId, OTHER_CLASSMATE.password);
     expect((await other.get(course)).status).toBe(404);
     expect((await other.post(`/api${course.replace(/\/$/, "")}`, { _action: "target", target: "50" })).status).toBe(404);
   });

@@ -18,28 +18,18 @@ const path = Astro.url.pathname;
 const error = Astro.url.searchParams.get("error");
 const notice = Astro.url.searchParams.get("notice");
 
-// Logged out, the nav is only Log in and About: the lockup is the way home
-// (docs/harness/visual-design.md). Staff get their own, shorter nav.
+// Logged out there are no links: every logged-out page is, or leads to, the
+// login. Staff get their own, shorter nav (docs/harness/visual-design.md).
+// About (/readme/) is footer-only (visual-design.md).
 const links = user?.role === "staff"
-  ? [
-      { href: "/staff/", label: "My courses", current: path.startsWith("/staff") },
-      { href: "/readme/", label: "About", current: path.startsWith("/readme") },
-    ]
+  ? [{ href: "/staff/", label: "My courses", current: path.startsWith("/staff") }]
   : user
   ? [
       { href: "/", label: "Dashboard", current: path === "/" },
       { href: "/archive/", label: "Archive", current: path.startsWith("/archive") },
       { href: "/planner/", label: "Planner", current: path.startsWith("/planner") },
-      { href: "/readme/", label: "About", current: path.startsWith("/readme") },
     ]
-  : [
-      {
-        href: "/login/",
-        label: "Log in",
-        current: path.startsWith("/login") || path.startsWith("/register"),
-      },
-      { href: "/readme/", label: "About", current: path.startsWith("/readme") },
-    ];
+  : [];
 ---
 
 <!doctype html>
@@ -78,26 +68,30 @@ const links = user?.role === "staff"
               </button>
             )
           }
-          <ul class="nav-links" id="nav-links">
-            {
-              links.map((l) => (
-                <li>
-                  <a href={l.href} aria-current={l.current ? "page" : undefined}>
-                    {l.label}
-                  </a>
-                </li>
-              ))
-            }
-            {
-              user && (
-                <li>
-                  <form method="post" action="/api/logout">
-                    <button type="submit">Log out</button>
-                  </form>
-                </li>
-              )
-            }
-          </ul>
+          {
+            user && (
+              <ul class="nav-links" id="nav-links">
+                {
+                  links.map((l) => (
+                    <li>
+                      <a href={l.href} aria-current={l.current ? "page" : undefined}>
+                        {l.label}
+                      </a>
+                    </li>
+                  ))
+                }
+                {
+                  user && (
+                    <li>
+                      <form method="post" action="/api/logout">
+                        <button type="submit">Log out</button>
+                      </form>
+                    </li>
+                  )
+                }
+              </ul>
+            )
+          }
         </nav>
       </div>
       <slot name="hero" />
@@ -110,7 +104,7 @@ const links = user?.role === "staff"
     <footer class="site-footer">
       <div class="wrap">
         <p>ANU Grades is a student prototype built for COMP4020, not the official ANU record.</p>
-        <p>GPA and grade rules follow ANU's published grading scale and GPA pages. <a href="/readme/">About</a></p>
+        <p>GPA and grade rules follow ANU's published grading scale and GPA pages. <a href="/readme/">About this app</a></p>
       </div>
     </footer>
     {

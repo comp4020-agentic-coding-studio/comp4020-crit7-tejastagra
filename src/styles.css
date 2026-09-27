@@ -9,9 +9,10 @@
   --muted: oklch(0.2 0.01 73 / 62%);
   --divider: oklch(0.2 0.01 73 / 12%);
   --gold: #b97d1c;
-  --gold-hover: oklch(from #b97d1c calc(l + 0.06) c h);
   --link: oklch(0.536 0.127 73);
-  --on-gold: oklch(0.16 0 73);
+  /* one shade deeper than --gold so white text on it passes 4.5:1 (4.68:1) */
+  --gold-fill: #9e6912;
+  --gold-fill-hover: #87590e;
   --gold-soft: rgb(185 125 28 / 10%);
   --stripe: rgb(185 125 28 / 6%);
   --good: #16713a;
@@ -518,8 +519,8 @@ table {
 th {
   text-align: left;
   font-weight: 700;
-  color: var(--on-gold);
-  background: var(--gold);
+  color: #fff;
+  background: var(--gold-fill);
   padding: 0.5rem 0.75rem;
 }
 td {
@@ -744,10 +745,10 @@ button,
   gap: var(--s-sm);
   min-height: var(--tap);
   padding: 0.35rem var(--s-lg);
-  border: 2px solid var(--gold);
+  border: 2px solid var(--gold-fill);
   border-radius: var(--radius);
-  background: var(--gold);
-  color: var(--on-gold);
+  background: var(--gold-fill);
+  color: #fff;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -759,9 +760,9 @@ button,
 }
 button:hover,
 .button:hover {
-  background: var(--gold-hover);
-  border-color: var(--gold-hover);
-  color: var(--on-gold);
+  background: var(--gold-fill-hover);
+  border-color: var(--gold-fill-hover);
+  color: #fff;
 }
 .button-secondary {
   background: transparent;
@@ -851,9 +852,9 @@ button:hover,
   cursor: pointer;
 }
 .chips input:checked + span {
-  border-color: var(--gold);
-  background: var(--gold);
-  color: var(--on-gold);
+  border-color: var(--gold-fill);
+  background: var(--gold-fill);
+  color: #fff;
   font-weight: 600;
 }
 .chips input:focus-visible + span {

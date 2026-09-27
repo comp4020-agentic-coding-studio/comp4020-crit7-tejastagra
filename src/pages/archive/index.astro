@@ -7,11 +7,13 @@ import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listStudentCourses } from "../../lib/data";
 import { fmtGpa, plural } from "../../lib/format";
-import { summarise } from "../../lib/record";
+import { groupBySemester, summarise } from "../../lib/record";
 
 const student = Astro.locals.user!;
 const summary = summarise(student, listStudentCourses(student.uniId));
-const past = summary.semesters.filter((s) => !s.inProgress);
+// filter by course, not session: a course graded early in a still-running
+// session belongs here even though its classmates are on the dashboard
+const past = groupBySemester(summary.courses.filter((v) => !v.inProgress));
 const current = summary.courses.filter((v) => v.inProgress).length;
 ---
 

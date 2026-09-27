@@ -14,6 +14,9 @@ import { createUser, findUserByUniId, updatePlan } from "./users";
 export const DEMO_STUDENT = { uniId: "u7654321", password: "demo1234", name: "Demo Student" };
 export const DEMO_STAFF = { uniId: "u1000001", password: "staff1234", name: "Demo Convenor" };
 export const OTHER_STAFF = { uniId: "u1000002", password: "staff1234", name: "Other Convenor" };
+/** Every seeded classmate can log in with this, so there's more than one
+ *  student account to test privacy with. */
+export const CLASSMATE_PASSWORD = "student1234";
 const DEMO_PLAN = { targetGpa: 5.5, degreeUnits: 144 };
 
 type Item = [name: string, weight: number, outOf: number];
@@ -102,8 +105,8 @@ const HISTORY: SeedOffering[] = [
   { code: "COMP4020", title: "Agentic Coding Studio", year: 2026, term: "S2", template: "capstone", marked: { count: 3, level: 88 }, unreleasedMarked: true, target: 80 },
 ];
 
-/** Classmates: uni IDs and names only (no accounts), with a typical level. */
-const CLASSMATES = [
+/** Classmates, each with a typical level; they get student accounts too. */
+export const CLASSMATES = [
   { uniId: "u5512001", name: "Priya Nair", level: 88 },
   { uniId: "u5512002", name: "Liam O'Connor", level: 76 },
   { uniId: "u5512003", name: "Mei Tanaka", level: 69 },
@@ -175,8 +178,12 @@ function seedOfferings(convenorId: number): void {
   });
 }
 
-/** Creates the demo accounts and their world, once. */
+/** Creates the demo accounts and their world, once. Accounts are only ever
+ *  provisioned like this (or by scripts/add-user.ts): there's no sign-up. */
 export function ensureDemoData(): void {
+  for (const m of CLASSMATES) {
+    if (!findUserByUniId(m.uniId)) createUser({ uniId: m.uniId, name: m.name, password: CLASSMATE_PASSWORD });
+  }
   if (findUserByUniId(DEMO_STAFF.uniId)) return;
   const staff = createUser({ ...DEMO_STAFF, role: "staff" });
   createUser({ ...OTHER_STAFF, role: "staff" });

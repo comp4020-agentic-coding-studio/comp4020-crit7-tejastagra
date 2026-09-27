@@ -19,14 +19,18 @@ official, so only the convenor writes them.
 Try both sides:
 
 - Student: uni ID `u7654321`, password `demo1234`.
-- Staff (from "Staff login"): uni ID `u1000001`, password `staff1234`. This
-  demo convenor runs every course the demo student has taken, each with a
-  few classmates.
+- Staff: uni ID `u1000001`, password `staff1234`. This demo convenor runs
+  every course the demo student has taken, each with seven classmates.
 
-The demo accounts are shared, so either one can "Reset demo data". Login is
-a mock with its own accounts, not ANU's single sign-on. Registering as a
-student claims a uni ID, which a real deployment would get from ANU login
-instead. Don't use your real ANU password.
+Both use the same login page; the account decides what you see. The demo
+accounts are shared, so either one can "Reset demo data".
+
+There's no sign-up. Open sign-up would let anyone on the internet claim a
+uni ID and read that student's results. Instead, accounts are provisioned:
+the demo accounts and classmates come from the seed, and more can be added
+with `node scripts/add-user.ts u1234567 "Full Name" student`. A real
+deployment would get accounts from ANU's single sign-on. Login here is a
+mock, so don't use your real ANU password.
 
 ## Why this system
 

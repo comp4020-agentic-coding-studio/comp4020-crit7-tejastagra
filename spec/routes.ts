@@ -2,4 +2,4 @@
 // here, or the invariants stop covering it. These are the public pages;
 // logged-in pages are covered in spec/flows.test.ts (STUDENT_ROUTES and
 // STAFF_ROUTES).
-export const ROUTES = ["/", "/login/", "/register/", "/readme/"];
+export const ROUTES = ["/", "/login/", "/readme/"];
