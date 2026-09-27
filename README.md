@@ -46,11 +46,16 @@ Where ANU says nothing, I made a choice and the app says so:
   publish a rounding rule.
 - Hurdles aren't modelled.
 
+**It looks like part of the university.** The design follows my A2 course
+site: a white header with a crest and "ANU / Grades" lockup, gold headings,
+a thin gold line down the page, and gold-headed tables. The crest is drawn
+for this prototype, not ANU's.
+
 **It works properly on a phone.** Results emails get opened on a phone, so
 every feature works at 360px wide:
 
-- a bottom tab bar within thumb reach
-- cards instead of tables
+- a menu that folds behind one button
+- cards for anything with forms, and tables only where they fit
 - big tap targets
 - number keypads for marks
 

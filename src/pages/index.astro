@@ -1,8 +1,11 @@
 ---
-// Home: a welcome and login for visitors; the dashboard once logged in.
+// "/" is the landing page for visitors (hero, login, what the app does) and
+// the dashboard once logged in. There's no "Home" in the nav; the lockup
+// links here.
 import Alert from "../components/Alert.astro";
 import CourseCard from "../components/CourseCard.astro";
 import Field from "../components/Field.astro";
+import PageHeader from "../components/PageHeader.astro";
 import Stat from "../components/Stat.astro";
 import Layout from "../layouts/Layout.astro";
 import { DEMO_PASSWORD, DEMO_UNI_ID, listCourses } from "../lib/data";
@@ -19,54 +22,96 @@ const plan = summary?.plan;
 <Layout title={student ? "Dashboard" : "Your grades, in one place"}>
   {
     !student && (
-      <>
-        <h1>Your grades, in one place</h1>
-        <p>
-          Every released result with its full assessment breakdown, your GPA worked out the way ANU does it, and
-          a plain answer to "what do I need on the final?"
-        </p>
-        <section class="card" aria-labelledby="login-heading">
-          <h2 id="login-heading" style="margin-top:0">
-            Log in
-          </h2>
-          <form method="post" action="/api/login">
-            <input type="hidden" name="next" value="/" />
-            <Field
-              id="home-uni-id"
-              label="Uni ID"
-              name="uniId"
-              required
-              autocomplete="username"
-              autocapitalize="none"
-              placeholder="u1234567"
-            />
-            <Field
-              id="home-password"
-              label="Password"
-              name="password"
-              type="password"
-              required
-              autocomplete="current-password"
-            />
-            <button type="submit" class="button-block">
-              Log in
-            </button>
-          </form>
-          <p class="small" style="margin-top:0.75rem">
-            New here? <a href="/register/">Create an account</a>
+      <section class="hero" slot="hero">
+        <div class="hero-inner">
+          <h1>Your grades, in one place</h1>
+          <p>
+            Every released result with its assessment breakdown, your GPA worked out the ANU way, and a plain
+            answer to "what do I need on the final?"
           </p>
-        </section>
-        <Alert kind="info">
-          <strong>Just looking?</strong> Log in as the demo student: uni ID <code>{DEMO_UNI_ID}</code>, password{" "}
-          <code>{DEMO_PASSWORD}</code>. It's a mock of ANU login with illustrative data, not the real ISIS.
-        </Alert>
+        </div>
+      </section>
+    )
+  }
+  {
+    !student && (
+      <>
+        <div class="two-col">
+          <section class="card" aria-labelledby="login-heading">
+            <h2 id="login-heading">Log in</h2>
+            <form method="post" action="/api/login">
+              <input type="hidden" name="next" value="/" />
+              <Field
+                id="home-uni-id"
+                label="Uni ID"
+                name="uniId"
+                required
+                autocomplete="username"
+                autocapitalize="none"
+                placeholder="u1234567"
+              />
+              <Field
+                id="home-password"
+                label="Password"
+                name="password"
+                type="password"
+                required
+                autocomplete="current-password"
+              />
+              <button type="submit" class="button-block">
+                Log in
+              </button>
+            </form>
+            <p class="small" style="margin:0.75rem 0 0">
+              New here? <a href="/register/">Create an account</a>
+            </p>
+          </section>
+          <div>
+            <Alert kind="info">
+              <strong>Just looking?</strong> Log in as the demo student: uni ID <code>{DEMO_UNI_ID}</code>, password{" "}
+              <code>{DEMO_PASSWORD}</code>.
+            </Alert>
+            <p class="small muted">
+              This is a prototype with its own accounts and illustrative data. It isn't connected to ISIS, so
+              don't use your real ANU password.
+            </p>
+          </div>
+        </div>
+
+        <h2>What you can do</h2>
+        <div class="two-col">
+          <section class="card">
+            <h3>See your archive</h3>
+            <p style="margin:0">
+              Every course by session, with its released grade and each assessment mark behind it.
+            </p>
+          </section>
+          <section class="card">
+            <h3>Know your GPA</h3>
+            <p style="margin:0">
+              Calculated on ANU's 7-point scale: grade points × units, fails included, WD and CRS left out.
+            </p>
+          </section>
+          <section class="card">
+            <h3>Plan each course</h3>
+            <p style="margin:0">
+              Set a target grade and see exactly what you need on the final exam or the last assignments.
+            </p>
+          </section>
+          <section class="card">
+            <h3>Plan your degree</h3>
+            <p style="margin:0">
+              Set a target GPA and see what your remaining semesters need to average to get there.
+            </p>
+          </section>
+        </div>
       </>
     )
   }
   {
     student && summary && (
       <>
-        <h1>Hi, {student.name.split(" ")[0]}</h1>
+        <PageHeader title={`Hi, ${student.name.split(" ")[0]}`} lede="Your results at a glance, and what's still in play this semester." />
         <dl class="stats">
           <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
           <Stat
@@ -79,18 +124,12 @@ const plan = summary?.plan;
             value={fmtGpa(summary.projectedGpa)}
             note={summary.projectedGpa === null ? "set course targets" : "this semester"}
           />
-          <Stat
-            label="Units passed"
-            value={String(summary.creditUnits)}
-            note={`of ${summary.degreeUnits}`}
-          />
+          <Stat label="Units passed" value={String(summary.creditUnits)} note={`of ${summary.degreeUnits}`} />
         </dl>
 
         {plan && (
-          <section class="card" aria-labelledby="plan-heading">
-            <h2 id="plan-heading" style="margin-top:0">
-              Your target GPA
-            </h2>
+          <section class="card needed" aria-labelledby="plan-heading">
+            <h2 id="plan-heading">Your target GPA</h2>
             {plan.status === "possible" && (
               <p>
                 To reach <strong>{plan.target.toFixed(3)}</strong> you need to average{" "}
@@ -142,9 +181,7 @@ const plan = summary?.plan;
 
         {student.uniId === DEMO_UNI_ID && (
           <section class="card" aria-labelledby="demo-heading">
-            <h2 id="demo-heading" style="margin-top:0">
-              Demo account
-            </h2>
+            <h2 id="demo-heading">Demo account</h2>
             <p class="small">Everyone shares this account. Put it back to its starting history any time.</p>
             <form method="post" action="/api/demo/reset">
               <button type="submit" class="button-secondary">

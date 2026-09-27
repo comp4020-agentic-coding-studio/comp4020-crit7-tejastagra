@@ -1,5 +1,6 @@
 ---
 import Field from "../../components/Field.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import Layout from "../../layouts/Layout.astro";
 import { DEMO_PASSWORD, DEMO_UNI_ID } from "../../lib/data";
 import { safeNext } from "../../lib/forms";
@@ -9,7 +10,7 @@ if (Astro.locals.student) return Astro.redirect(next, 303);
 ---
 
 <Layout title="Log in">
-  <h1>Log in</h1>
+  <PageHeader title="Log in" lede="Log in with your uni ID to see your results." />
   <section class="card">
     <form method="post" action="/api/login">
       <input type="hidden" name="next" value={next} />

@@ -1,11 +1,13 @@
 ---
-// The archive: every course, newest session first, with the GPA for each
-// session and for the whole career.
-import CourseCard from "../../components/CourseCard.astro";
+// The archive: every course, newest session first, as university-style
+// tables (they fit at 360px: code/course, units, grade), with each
+// session's GPA and the career GPA.
+import GradeBadge from "../../components/GradeBadge.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listCourses } from "../../lib/data";
-import { fmtGpa, plural } from "../../lib/format";
+import { fmtGpa, fmtPercent, plural } from "../../lib/format";
 import { summarise } from "../../lib/record";
 
 const student = Astro.locals.student!;
@@ -13,15 +15,14 @@ const summary = summarise(student, listCourses(student.id));
 ---
 
 <Layout title="Archive">
-  <h1>Archive</h1>
+  <PageHeader title="Archive" lede="Every course you've taken, newest first. Open a course to see its assessment breakdown." />
   <dl class="stats">
     <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`${summary.points} points ÷ ${summary.gpaUnits} units`} />
     <Stat label="Courses" value={String(summary.courses.length)} note={plural(summary.semesters.length, "session")} />
   </dl>
   <p class="muted small">
     GPA is worked out the ANU way: grade points × units, summed and divided by units, to three decimal places. Fails
-    count as units with 0 points; results like WD and CRS don't count at all.
-    <a href="/readme/">How this works</a>
+    count as units with 0 points; results like WD and CRS don't count at all. <a href="/readme/">How this works</a>
   </p>
   <p>
     <a class="button button-secondary" href="/courses/new/">Add a course</a>
@@ -33,17 +34,55 @@ const summary = summarise(student, listCourses(student.id));
         <div class="semester-head">
           <h2 id={`sem-${s.key}`}>{s.label}</h2>
           <span class="muted small">
-            {s.units} units
-            {s.gpa !== null && <> · session GPA {fmtGpa(s.gpa)}</>}
-            {s.inProgress && <> · in progress</>}
+            {s.inProgress ? "In progress" : s.gpa !== null ? `Session GPA ${fmtGpa(s.gpa)}` : "No GPA results"}
           </span>
         </div>
-        <ul class="course-list">
-          {s.courses.map((v) => (
-            <CourseCard view={v} showNeeded={v.inProgress} />
-          ))}
-        </ul>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Course</th>
+                <th scope="col" class="num">Units</th>
+                <th scope="col" class="grade-cell">Grade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.courses.map((v) => (
+                <tr>
+                  <td class="course-cell">
+                    <a href={`/courses/${v.course.id}/`}>{v.course.code}</a>
+                    <span>{v.course.title}</span>
+                    {v.inProgress && (
+                      <span>
+                        {v.standing.averageSoFar === null
+                          ? "Nothing marked yet"
+                          : `${fmtPercent(v.standing.averageSoFar)} so far`}
+                        {v.needed?.status === "possible" && ` · need ${fmtPercent(v.needed.neededPercent!)} on the rest`}
+                        {v.needed?.status === "secured" && " · target secured"}
+                        {(v.needed?.status === "out-of-reach" || v.needed?.status === "finished") && " · target out of reach"}
+                      </span>
+                    )}
+                  </td>
+                  <td class="num">{v.course.units}</td>
+                  <td class="grade-cell">
+                    {v.releasedGrade && <GradeBadge grade={v.releasedGrade} />}
+                    {!v.releasedGrade && v.trackingGrade && <GradeBadge grade={v.trackingGrade} tracking />}
+                    {!v.releasedGrade && !v.trackingGrade && <span class="muted small">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>Total</td>
+                <td class="num">{s.units}</td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </section>
     ))
   }
+  <p class="muted small">A dashed grade is what an in-progress course is tracking at, not a released result.</p>
 </Layout>

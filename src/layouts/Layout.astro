@@ -1,7 +1,10 @@
 ---
-// Every page's shell: head, header, the tab-bar nav, flash messages from a
-// form redirect (?error= / ?notice=), and live sync across devices.
+// Every page's shell, in the university-site style of docs/harness/visual-design.md:
+// the lockup header and nav, an optional hero, the gold-ruled content
+// column, flash messages from a form redirect (?error= / ?notice=), the
+// footer, and live sync across a student's devices.
 import Alert from "../components/Alert.astro";
+import Crest from "../components/Crest.astro";
 import "../styles.css";
 
 interface Props {
@@ -15,35 +18,22 @@ const path = Astro.url.pathname;
 const error = Astro.url.searchParams.get("error");
 const notice = Astro.url.searchParams.get("notice");
 
-const icons = {
-  home: "M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
-  archive: "M4 4h16v4H4zM5 8h14v12H5zM10 12h4",
-  planner: "M4 20V10M10 20V4M16 20v-7M22 20H2",
-  about: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-5M12 8h.01",
-  login: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3",
-};
-
-const tabs = student
+// Logged out, the nav is only Log in and About: the lockup is the way home
+// (docs/harness/visual-design.md).
+const links = student
   ? [
-      { href: "/", label: "Home", icon: icons.home, match: (p: string) => p === "/" },
-      {
-        href: "/archive/",
-        label: "Archive",
-        icon: icons.archive,
-        match: (p: string) => p.startsWith("/archive") || p.startsWith("/courses"),
-      },
-      { href: "/planner/", label: "Planner", icon: icons.planner, match: (p: string) => p.startsWith("/planner") },
-      { href: "/readme/", label: "About", icon: icons.about, match: (p: string) => p.startsWith("/readme") },
+      { href: "/", label: "Dashboard", current: path === "/" },
+      { href: "/archive/", label: "Archive", current: path.startsWith("/archive") || path.startsWith("/courses") },
+      { href: "/planner/", label: "Planner", current: path.startsWith("/planner") },
+      { href: "/readme/", label: "About", current: path.startsWith("/readme") },
     ]
   : [
-      { href: "/", label: "Home", icon: icons.home, match: (p: string) => p === "/" },
       {
         href: "/login/",
         label: "Log in",
-        icon: icons.login,
-        match: (p: string) => p.startsWith("/login") || p.startsWith("/register"),
+        current: path.startsWith("/login") || path.startsWith("/register"),
       },
-      { href: "/readme/", label: "About", icon: icons.about, match: (p: string) => p.startsWith("/readme") },
+      { href: "/readme/", label: "About", current: path.startsWith("/readme") },
     ];
 ---
 
@@ -53,48 +43,71 @@ const tabs = student
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#1b1b1f" />
+    <meta name="theme-color" content="#ffffff" />
     <title>{title} · ANU Grades</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+    />
+    <script is:inline>
+      document.documentElement.classList.add("js");
+    </script>
   </head>
   <body data-signed-in={student ? "" : undefined}>
-    <header class="site-header">
-      <a class="brand" href="/">ANU <span>Grades</span></a>
-      {
-        student && (
-          <form method="post" action="/api/logout">
-            <span class="small visually-hidden">Logged in as {student.name}</span>
-            <button class="link-button" type="submit">
-              Log out
+    <header>
+      <div class="site-header">
+      <nav class:list={["nav-inner", { "nav-collapsible": student }]} aria-label="Main">
+        <a class="lockup" href="/">
+          <Crest />
+          <span>ANU<span class="slash">/</span>Grades</span>
+        </a>
+        {
+          student && (
+            <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="nav-links">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+              <span class="visually-hidden">Menu</span>
             </button>
-          </form>
-        )
-      }
+          )
+        }
+        <ul class="nav-links" id="nav-links">
+          {
+            links.map((l) => (
+              <li>
+                <a href={l.href} aria-current={l.current ? "page" : undefined}>
+                  {l.label}
+                </a>
+              </li>
+            ))
+          }
+          {
+            student && (
+              <li>
+                <form method="post" action="/api/logout">
+                  <button type="submit">Log out</button>
+                </form>
+              </li>
+            )
+          }
+        </ul>
+      </nav>
+      </div>
+      <slot name="hero" />
     </header>
-    <nav class="tabs" aria-label="Main">
-      {
-        tabs.map((t) => (
-          <a href={t.href} aria-current={t.match(path) ? "page" : undefined}>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d={t.icon} />
-            </svg>
-            {t.label}
-          </a>
-        ))
-      }
-    </nav>
-    <main id="main">
-      {error && <Alert kind="error">{error}</Alert>}
-      {notice && <Alert kind="notice">{notice}</Alert>}
-      <slot />
-    </main>
+    <div class="frame">
+      <main id="main">
+        {error && <Alert kind="error">{error}</Alert>}
+        {notice && <Alert kind="notice">{notice}</Alert>}
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <p>ANU Grades is a student prototype built for COMP4020, not the official ANU record.</p>
+        <p>GPA and grade rules follow ANU's published grading scale and GPA pages. <a href="/readme/">About</a></p>
+      </footer>
+    </div>
     {
       student && (
         <div class="sync-banner" role="status" hidden>
@@ -106,6 +119,15 @@ const tabs = student
       )
     }
     <script>
+      // Phone menu: fold the logged-in links behind a button. Without JS
+      // the links just show in a row, so nothing depends on this.
+      const nav = document.querySelector<HTMLElement>(".nav-collapsible");
+      const toggle = nav?.querySelector<HTMLButtonElement>(".menu-toggle");
+      toggle?.addEventListener("click", () => {
+        const open = nav!.classList.toggle("open");
+        toggle.setAttribute("aria-expanded", String(open));
+      });
+
       // Live sync: when this student's data changes in another tab or on
       // another device, offer a refresh rather than reloading under them
       // (they might be halfway through typing a mark).

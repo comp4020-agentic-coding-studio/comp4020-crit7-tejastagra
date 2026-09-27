@@ -27,11 +27,11 @@ const isPreset = presets.some(([, m]) => m === course.targetMark);
 <Layout title={`${course.code} ${course.title}`}>
   <p class="small"><a href="/archive/">← Archive</a></p>
   <h1>{course.code}</h1>
-  <p style="font-size:1.1rem">{course.title}</p>
+  <p class="lede" style="margin-bottom:0.25rem">{course.title}</p>
   <p class="muted small">{termLabel(course.term, course.year)} · {course.units} units</p>
 
   <section class="card" aria-labelledby="result-heading">
-    <h2 id="result-heading" style="margin-top:0">
+    <h2 id="result-heading">
       {releasedGrade ? "Released result" : "Where you're at"}
     </h2>
     {
@@ -78,7 +78,7 @@ const isPreset = presets.some(([, m]) => m === course.targetMark);
   {
     !releasedGrade && (
       <section class="card" id="target" aria-labelledby="target-heading">
-        <h2 id="target-heading" style="margin-top:0">
+        <h2 id="target-heading">
           Your target
         </h2>
         <form method="post" action={base}>

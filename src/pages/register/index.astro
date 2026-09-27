@@ -1,15 +1,16 @@
 ---
 import Field from "../../components/Field.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import Layout from "../../layouts/Layout.astro";
 
 if (Astro.locals.student) return Astro.redirect("/", 303);
 ---
 
 <Layout title="Create an account">
-  <h1>Create an account</h1>
-  <p class="muted">
-    This is a prototype with its own accounts, separate from ANU's. Pick a new password, not your real ANU one.
-  </p>
+  <PageHeader
+    title="Create an account"
+    lede="This is a prototype with its own accounts, separate from ANU's. Pick a new password, not your real ANU one."
+  />
   <section class="card">
     <form method="post" action="/api/register">
       <Field

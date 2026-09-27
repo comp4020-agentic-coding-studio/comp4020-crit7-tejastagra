@@ -3,6 +3,7 @@
 // has to average to get there.
 import Field from "../../components/Field.astro";
 import GradeBadge from "../../components/GradeBadge.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listCourses } from "../../lib/data";
@@ -53,14 +54,14 @@ if (plan) {
 ---
 
 <Layout title="GPA planner">
-  <h1>GPA planner</h1>
+  <PageHeader title="GPA planner" lede="Set the GPA you're aiming for and see what the rest of your degree needs to average." />
   <dl class="stats">
     <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
     <Stat label="Units left" value={String(summary.remainingUnits)} note={`of a ${summary.degreeUnits}-unit degree`} />
   </dl>
 
   <section class="card" aria-labelledby="goal-heading">
-    <h2 id="goal-heading" style="margin-top:0">Your goal</h2>
+    <h2 id="goal-heading">Your goal</h2>
     <form method="post" action="/api/plan">
       <div class="row">
         <Field
@@ -102,7 +103,7 @@ if (plan) {
   {
     scenarios.map(({ key, title, intro, s }) => (
       <section class="card needed" aria-labelledby={`plan-${key}`}>
-        <h2 id={`plan-${key}`} style="margin-top:0">
+        <h2 id={`plan-${key}`}>
           {title}
         </h2>
         <p class="muted small">{intro}</p>
