@@ -1,5 +1,5 @@
 declare namespace App {
   interface Locals {
-    student: import("./lib/schema").Student | null;
+    user: import("./lib/schema").User | null;
   }
 }

@@ -22,6 +22,20 @@
       "when": 1790544837628,
       "tag": "0002_drop_guestbook",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790546285755,
+      "tag": "0003_staff_and_enrolments",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790546286332,
+      "tag": "0004_drop_student_owned_courses",
+      "breakpoints": true
     }
   ]
 }

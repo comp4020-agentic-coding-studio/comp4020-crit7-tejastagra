@@ -1,10 +1,11 @@
 // The data layer's front door: pages import from here. Loading it makes
-// sure the demo student exists (it runs once per server process, after the
+// sure the demo accounts exist (once per server process, after the
 // migrations in db.ts).
-import { ensureDemoStudent } from "./seed";
+import { ensureDemoData } from "./seed";
 
-ensureDemoStudent();
+ensureDemoData();
 
-export * from "./courses";
+export * from "./results";
 export * from "./seed";
-export * from "./students";
+export * from "./staff";
+export * from "./users";
