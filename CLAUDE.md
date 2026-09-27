@@ -43,8 +43,8 @@ its reason has stopped applying.
   layer, auth, pages), the schema and migration flow, and data scoping.
 - @docs/harness/ux-mobile.md — mobile-first layout, forms that work without
   JavaScript, accessibility, and the plain student-facing voice.
-- @docs/harness/visual-design.md — the university-site look taken from my
-  A2 site: palette, header and nav, content rule, hero, tables, cards.
+- @docs/harness/visual-design.md — the university-site look measured from my
+  A2 site: exact colours, weights and spacing, full-width layout, one login.
 - @docs/harness/spec-and-process.md — which tests protect which promise,
   how to run them, commit discipline, and what to do when a change would
   break a check.

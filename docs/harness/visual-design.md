@@ -3,48 +3,67 @@
 The app should look like a page on a university site, not a startup
 dashboard. The reference is my A2 course site
 (`comp4020-ass2-tejastagra`, built on `astro-theme-university` with the Slop
-brand palette); this app reuses its look without depending on the theme.
+brand palette). This app copies its look without depending on the theme.
 Why: students trust a results page that looks like the rest of the
 university, and one consistent style across my work is a deliberate choice.
 
-## Palette (from the A2 brand file, `astro-theme-slop/slop.css`)
+The values below were **measured** from the built A2 site (computed styles
+in headless Chrome, 2026-09-28), not eyeballed. Don't "improve" them with a
+colour of your own: the earlier cream background and bronze buttons were
+rejected for exactly that reason.
+
+## Tokens (at an 18px root, as on A2)
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--gold` | `#b97d1c` | h1/h2 (24px+ only: 3.2:1 contrast), table headers, the content rule, accents |
-| `--bronze` | `#8a5c13` | links, small headings (h3 and below), primary buttons (white text, 5.9:1) |
-| `--grey` | `#6b6154` | secondary text, borders |
-| `--bg` | `#fdfcf9` | warm off-white page |
-| `--ink` | `#2a2520` | body text |
+| `--bg` | `oklch(0.994 0.004 73)` | page, header, cards (cards have no fill of their own) |
+| `--text` | `oklch(0.2 0.01 73)` | body text |
+| `--text-2` | `--text` at 78% | lede, nav links, secondary text |
+| `--muted` | `--text` at 62% | footer, hints, small print |
+| `--divider` | `--text` at 12% | every border: cards, inputs, tables, footer rule |
+| `--gold` | `#b97d1c` | headings, current nav item, buttons, table header, hero underline |
+| `--link` | `oklch(0.536 0.127 73)` | links in text |
+| `--on-gold` | `oklch(0.16 0 73)` | text on gold (buttons, table header): dark, not white |
+| `--gold-soft` | gold at 10% | hover, selected, what-if result tint |
+| `--stripe` | gold at 6% | even table rows |
 
-Gold is never used for text under 24px, since it fails contrast there; use
-bronze instead. Grade badges keep their own colours so HD/D/CR/P/N read at a
-glance, but always with the letters.
+Spacing is A2's scale: 9 / 18 / 27 / 36 / 72px (0.5 / 1 / 1.5 / 2 / 4rem).
+Radius 6.75px on inputs and buttons; **cards are square**.
+
+## Type (Public Sans)
+
+- h1: 2.5rem (45px), **weight 400**, gold, letter-spacing -0.02em.
+- h2: 1.875rem, weight 600, gold. h3: 1.375rem, 600, gold.
+- Card titles: 1.125rem, 600, gold.
+- Body 1rem (18px) 400, line-height 1.6. Lede 1.25rem in `--text-2`.
+- Nav links 0.875rem, 400, `--text-2`; current page gold. Wordmark 600.
+- Gold text is used only at these sizes/weights (large or 600+), where it
+  passes contrast; small text links use `--link`.
 
 ## Layout
 
-- **Header:** white bar with a crest mark + "ANU / Grades" lockup (the slash
-  in gold, like "Slop / University"), plain text nav links on the right, the
-  current page in gold. On phones the links collapse behind a menu button
-  (JS enhancement; without JS the links show in a row under the lockup).
-  Don't use ANU's real crest or logo: this is a prototype, not the
-  official system.
-- **Nav contents:** logged out, only **Log in** and **About**. There's no
-  "Home" item; the lockup links to `/`. Students: Dashboard, Archive,
-  Planner, About, Log out. Staff: My courses, About, Log out. Staff log in
-  from a separate staff login page, linked from the student one.
-- **Content column:** max ~48rem, with a thin gold vertical rule down its
-  left edge on screens 720px and wider (hidden on phones).
-- **Landing (logged out `/`):** a dark banner hero with a large white title
-  and a short gold underline, then a lede paragraph and the login card.
-- **Inner pages:** a large gold h1, then a lede paragraph in larger grey
-  text.
-- **Tables:** gold header row, lightly striped rows. Allowed only where they
-  fit at 360px (e.g. the archive's code / course / units / grade).
-- **Cards and boxes are clean, like A2's:** near-square corners (6px), one
-  thin even border on all four sides, a bronze title. **No coloured accent
-  bars** on the left, right or top of any box (cards, alerts, stats,
-  panels). Status is carried by the words and a small badge, not a stripe.
-- **Footer:** divider lines, a short "prototype, not the official record"
-  note.
-- **Type:** Public Sans (Google Fonts) with system fallbacks, 18px base.
+- **Use the full width.** Content spans the window with a 2rem gutter
+  (capped at 90rem so lines never get absurd). Put things side by side in
+  grids instead of stacking them, so pages need little scrolling: stats in
+  a row, tables in an auto-fill grid, a main column and a side column on
+  detail pages. On phones everything stacks into one column.
+- **Don't look complicated:** at most two columns of content (plus the
+  stat row), generous gaps (27px), no nested boxes inside boxes.
+- **No vertical rule** down the page, and no coloured accent bars on any
+  box. Boxes are one even 1px `--divider` border.
+- **Header:** same background as the page, no bottom border; crest mark +
+  "ANU / Grades" wordmark left, nav links right. Don't use ANU's real
+  crest or logo: this is a prototype, not the official system.
+- **Nav contents:** logged out, only **Log in** and **About** (the lockup is
+  the way home). Students: Dashboard, Archive, Planner, About, Log out.
+  Staff: My courses, About, Log out.
+- **One login page** for everyone. The account's role decides where it
+  lands (students to the dashboard, staff to My courses) and what the nav
+  shows. There is no separate staff login.
+- **Landing hero:** dark scrim, large white title in weight 400, the 4rem
+  gold underline. Keep it short so the login is visible without scrolling.
+- **Tables:** gold header row with dark text, weight 700; striped rows;
+  cells padded 9px 13.5px.
+- **Buttons:** gold fill with dark text, weight 600; secondary is a gold
+  outline with gold text.
+- **Footer:** a 1px divider rule, muted 0.875rem text.
