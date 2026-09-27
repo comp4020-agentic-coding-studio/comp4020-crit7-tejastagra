@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyScenario,
   calculateGpa,
   courseStanding,
   exampleGradeMix,
@@ -116,6 +117,33 @@ describe("course standing and what's needed", () => {
 
   it("flags weights that don't add up to 100", () => {
     expect(courseStanding([{ weight: 40, score: null, outOf: 10 }]).weightsSumTo100).toBe(false);
+  });
+});
+
+describe("what-if scenarios", () => {
+  const items = [
+    { id: 1, weight: 50, score: 40, outOf: 50 }, // 40 marks banked
+    { id: 2, weight: 50, score: null, outOf: 100 },
+  ];
+
+  it("fills in a hypothetical score and finishes the course", () => {
+    const scenario = applyScenario(items, new Map([[2, 60]]));
+    expect(finalMark(scenario)).toBe(70);
+    expect(gradeForMark(finalMark(scenario)!)).toBe("D");
+  });
+
+  it("never overrides a released mark", () => {
+    const scenario = applyScenario(items, new Map([[1, 0]]));
+    expect(scenario[0].score).toBe(40);
+  });
+
+  it("clamps a hypothetical score to what the item is out of", () => {
+    expect(applyScenario(items, new Map([[2, 150]]))[1].score).toBe(100);
+  });
+
+  it("leaves the originals untouched", () => {
+    applyScenario(items, new Map([[2, 60]]));
+    expect(items[1].score).toBeNull();
   });
 });
 

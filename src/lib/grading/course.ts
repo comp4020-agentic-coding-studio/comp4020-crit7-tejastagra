@@ -87,3 +87,17 @@ export function finalMark(items: readonly AssessmentMark[]): number | null {
   const s = courseStanding(items);
   return s.weightRemaining === 0 && s.totalWeight > 0 ? s.secured : null;
 }
+
+/** A what-if: the same items with some hypothetical scores filled in.
+ *  Overrides only apply to items that aren't marked yet, and are clamped to
+ *  0..outOf. Nothing here is stored; see docs/harness/architecture.md. */
+export function applyScenario<T extends AssessmentMark & { id: number }>(
+  items: readonly T[],
+  overrides: ReadonlyMap<number, number>,
+): T[] {
+  return items.map((item) => {
+    const hypothetical = overrides.get(item.id);
+    if (item.score !== null || hypothetical === undefined) return item;
+    return { ...item, score: Math.min(item.outOf, Math.max(0, hypothetical)) };
+  });
+}
