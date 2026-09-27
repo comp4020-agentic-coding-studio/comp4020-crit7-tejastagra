@@ -1,15 +1,18 @@
 ---
 // A grade, always as its letters, with its full name for screen readers.
-// `tracking` marks a grade that isn't released yet (dashed outline).
+// `tracking` marks a grade that isn't released yet (dashed outline);
+// `hypothetical` is a what-if result (also dashed, read out as "would be").
 import { GRADE_NAMES, type Grade } from "../lib/grading";
 
 interface Props {
   grade: Grade;
   tracking?: boolean;
+  hypothetical?: boolean;
 }
-const { grade, tracking = false } = Astro.props;
+const { grade, hypothetical = false } = Astro.props;
+const tracking = Astro.props.tracking || hypothetical;
 const known = ["HD", "D", "CR", "P", "PS", "N", "NCN", "WN"].includes(grade);
-const label = `${tracking ? "Tracking at " : ""}${GRADE_NAMES[grade]}`;
+const label = `${hypothetical ? "Would be " : tracking ? "Tracking at " : ""}${GRADE_NAMES[grade]}`;
 ---
 
 <span class:list={["grade", known ? `grade-${grade}` : "grade-other", { tracking }]} title={label}>

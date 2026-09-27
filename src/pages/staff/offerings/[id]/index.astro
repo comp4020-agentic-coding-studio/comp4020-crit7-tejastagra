@@ -3,6 +3,7 @@
 // the page, as boxes saying what needs marking or releasing. Final grades
 // and course details sit behind disclosures; the class list has its own
 // page.
+import StatusChip from "../../../../components/StatusChip.astro";
 import ItemFields from "../../../../components/staff/ItemFields.astro";
 import OfferingForm from "../../../../components/staff/OfferingForm.astro";
 import Layout from "../../../../layouts/Layout.astro";
@@ -39,7 +40,7 @@ const allMarked = students > 0 && offering.items.length > 0 && offering.items.ev
 
   <section id="items" aria-labelledby="items-heading">
     <h2 id="items-heading">Assessment</h2>
-    {offering.items.length === 0 && <p class="muted">No assessment items yet. Add them from the class summary.</p>}
+    {offering.items.length === 0 && <div class="empty"><p>No assessment items yet. Add them from the class summary.</p></div>}
     <ul class="item-list">
       {
         offering.items.map((i) => {
@@ -49,23 +50,13 @@ const allMarked = students > 0 && offering.items.length > 0 && offering.items.ev
               <a class="item-box" href={`${page}/items/${i.id}/`}>
                 <div class="item-top">
                   <div class="item-name">{i.name}</div>
-                  <span class:list={["status", i.released ? "status-on" : "status-off"]}>
-                    {i.released ? "Released" : "Not released"}
-                  </span>
+                  <StatusChip kind={i.released ? "done" : "todo"} label={i.released ? "Released" : "Not released"} />
                 </div>
                 <div class="item-sub">
                   {fmtMark(i.weight)}% · out of {fmtMark(i.outOf)}
                 </div>
-                <div class="small">
-                  {marked < students ? (
-                    <strong>
-                      {marked} of {students} marked
-                    </strong>
-                  ) : (
-                    <>
-                      {marked} of {students} marked
-                    </>
-                  )}
+                <div class:list={["small", { muted: marked === students }]}>
+                  {marked} of {students} marked{marked < students && " · marking to do"}
                 </div>
               </a>
             </li>
@@ -92,9 +83,9 @@ const allMarked = students > 0 && offering.items.length > 0 && offering.items.ev
 
   <details class="section section-gap" id="students" open={allMarked && graded < students}>
     <summary>
-      Final grades <span class="muted">· {graded} of {students} set</span>
+      Final grades <StatusChip kind={students > 0 && graded === students ? "done" : "todo"} label={`${graded} of ${students} set`} />
     </summary>
-    {students === 0 && <p class="muted">Nobody is enrolled yet. <a href={`${page}/students/`}>Add students</a>.</p>}
+    {students === 0 && <div class="empty"><p>Nobody is enrolled yet. <a href={`${page}/students/`}>Add students</a>.</p></div>}
     {
       students > 0 && (
         <form method="post" action={base} class="one-col">
@@ -111,7 +102,7 @@ const allMarked = students > 0 && offering.items.length > 0 && offering.items.ev
               {rows.map(({ e, mark, standing }) => (
                 <tr>
                   <td class="course-cell">
-                    <strong>{e.name}</strong>
+                    {e.name}
                     <span>{e.uniId}</span>
                   </td>
                   <td class="num">
@@ -150,7 +141,7 @@ const allMarked = students > 0 && offering.items.length > 0 && offering.items.ev
             </tbody>
           </table>
           <p class="alert alert-info small" style="margin:0.5rem 0 1rem">
-            <strong>Students see a final grade as soon as you save it.</strong> There's no separate release step for grades.
+            Students see a final grade as soon as you save it. There's no separate release step for grades.
           </p>
           <div class="actions">
             <button type="submit" name="_action" value="save-grades">
@@ -170,10 +161,10 @@ const allMarked = students > 0 && offering.items.length > 0 && offering.items.ev
 
   <details class="section section-gap" id="details">
     <summary>Course details</summary>
-    <div class="card narrow" style="margin:0">
+    <div class="narrow" style="margin-inline:var(--s-md) auto">
       <OfferingForm action={base} offering={offering} submitLabel="Save details" idPrefix="edit" />
     </div>
-    <form method="post" action={base} class="narrow" style="margin:1rem 0 0">
+    <form method="post" action={base} class="narrow" style="margin-inline:var(--s-md) auto">
       <input type="hidden" name="_action" value="delete" />
       <button type="submit" class="button-danger button-block">Delete {offering.code} with all its marks</button>
     </form>

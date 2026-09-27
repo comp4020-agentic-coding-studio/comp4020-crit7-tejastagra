@@ -4,12 +4,11 @@
 // grade points per unit; the career-GPA range is labelled as a different
 // quantity so the two don't read as contradicting each other.
 import Field from "../../components/Field.astro";
-import GradeBadge from "../../components/GradeBadge.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listStudentCourses } from "../../lib/data";
 import { fmtGpa, plural } from "../../lib/format";
-import type { GradeMix } from "../../lib/grading";
+import { GRADE_NAMES, type GradeMix } from "../../lib/grading";
 import { summarise } from "../../lib/record";
 
 const student = Astro.locals.user!;
@@ -91,6 +90,7 @@ const after = plan?.afterTargets;
             </p>
             {plan.status === "possible" && plan.neededAverage !== null && (
               <>
+                <p class="status-label">Average needed</p>
                 <p class="big-number">{plan.neededAverage.toFixed(2)}</p>
                 <p>
                   grade points per unit on average to reach {plan.target.toFixed(3)}. That's {describeAverage(plan.neededAverage)}
@@ -100,7 +100,7 @@ const after = plan?.afterTargets;
                       {mixLine(plan.mix).map((m, i) => (
                         <>
                           {i > 0 && " and "}
-                          {m.courses} × <GradeBadge grade={m.grade as never} tracking />
+                          {m.courses} × {m.grade} ({GRADE_NAMES[m.grade as keyof typeof GRADE_NAMES]})
                         </>
                       ))}{" "}
                       across 6-unit courses
@@ -112,12 +112,12 @@ const after = plan?.afterTargets;
             )}
             {plan.status === "secured" && (
               <p>
-                <strong>Locked in.</strong> Even if the rest went badly you'd stay at or above {plan.target.toFixed(3)}.
+                Locked in. Even if the rest went badly you'd stay at or above {plan.target.toFixed(3)}.
               </p>
             )}
             {plan.status === "out-of-reach" && (
               <p>
-                <strong>{plan.target.toFixed(3)} is out of reach from here.</strong> Straight HDs would take your career GPA to{" "}
+                {plan.target.toFixed(3)} is out of reach from here. Straight HDs would take your career GPA to{" "}
                 {fmtGpa(plan.bestPossible)}.
               </p>
             )}
@@ -125,7 +125,7 @@ const after = plan?.afterTargets;
             {after && after.status === "possible" && after.neededAverage !== null && (
               <p class="small">
                 If you hit this semester's course targets, your other {plural(after.remainingUnits, "unit")} would need{" "}
-                <strong>{after.neededAverage.toFixed(2)}</strong>.
+                {after.neededAverage.toFixed(2)}.
               </p>
             )}
             {after && after.status === "secured" && <p class="small">Hitting this semester's course targets would lock it in.</p>}
@@ -141,7 +141,7 @@ const after = plan?.afterTargets;
     </section>
   </div>
   <p class="muted small section-gap">
-    Grade points: HD 7, D 6, CR 5, P 4, fail 0. Set course targets on each in-progress course from your
+    Grade points: HD 7, D 6, CR 5, P 4, fail 0. Set course targets on each in-progress course from your{" "}
     <a href="/">dashboard</a>.
   </p>
 </Layout>

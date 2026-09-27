@@ -10,9 +10,12 @@ import "../styles.css";
 interface Props {
   title: string;
   description?: string;
+  /** Which nav item a page belongs to, when the path doesn't say (a course
+   *  page belongs to the dashboard while running, the archive once graded). */
+  section?: string;
 }
 
-const { title, description = "Your ANU results archive and GPA planner." } = Astro.props;
+const { title, description = "Your ANU results archive and GPA planner.", section } = Astro.props;
 const user = Astro.locals.user;
 const path = Astro.url.pathname;
 const error = Astro.url.searchParams.get("error");
@@ -25,8 +28,8 @@ const links = user?.role === "staff"
   ? [{ href: "/staff/", label: "My courses", current: path.startsWith("/staff") }]
   : user
   ? [
-      { href: "/", label: "Dashboard", current: path === "/" },
-      { href: "/archive/", label: "Archive", current: path.startsWith("/archive") },
+      { href: "/", label: "Dashboard", current: section ? section === "/" : path === "/" },
+      { href: "/archive/", label: "Archive", current: section ? section === "/archive/" : path.startsWith("/archive") },
       { href: "/planner/", label: "Planner", current: path.startsWith("/planner") },
     ]
   : [];

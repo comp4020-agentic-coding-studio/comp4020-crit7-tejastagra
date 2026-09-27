@@ -3,6 +3,8 @@
 // a confirm step), plus enrol-one and upload-a-list. Split out of the
 // offering page by the UI/UX review so marking isn't crowded by admin.
 import Field from "../../../../../components/Field.astro";
+import GradeBadge from "../../../../../components/GradeBadge.astro";
+import { isGrade } from "../../../../../lib/grading";
 import Layout from "../../../../../layouts/Layout.astro";
 import { getOffering } from "../../../../../lib/data";
 import { termLabel } from "../../../../../lib/record";
@@ -46,7 +48,7 @@ const base = `/api/staff/offerings/${offering.id}`;
     </details>
   </div>
 
-  {offering.enrolments.length === 0 && <p class="muted section-gap">Nobody is enrolled yet.</p>}
+  {offering.enrolments.length === 0 && <div class="empty section-gap"><p>Nobody is enrolled yet. Enrol students one at a time or upload a class list.</p></div>}
   <ul class="item-list section-gap">
     {
       offering.enrolments.map((e) => (
@@ -55,18 +57,19 @@ const base = `/api/staff/offerings/${offering.id}`;
             <div class="item-top">
               <div>
                 <div class="item-name">{e.name}</div>
-                <div class="item-sub">{e.uniId}{e.grade && <> · final grade {e.grade}</>}</div>
+                <div class="item-sub">{e.uniId}</div>
               </div>
+              {e.grade && isGrade(e.grade) && <GradeBadge grade={e.grade} />}
+              <details class="remove">
+                <summary>Remove<span class="visually-hidden"> {e.name}</span></summary>
+                <form method="post" action={base}>
+                  <input type="hidden" name="_action" value="unenrol" />
+                  <input type="hidden" name="enrolmentId" value={e.id} />
+                  <p class="small">This deletes {e.name}'s marks in {offering.code} too.</p>
+                  <button type="submit" class="button-danger">Remove {e.name}</button>
+                </form>
+              </details>
             </div>
-            <details>
-              <summary class="small">Remove<span class="visually-hidden"> {e.name}</span></summary>
-              <form method="post" action={base}>
-                <input type="hidden" name="_action" value="unenrol" />
-                <input type="hidden" name="enrolmentId" value={e.id} />
-                <p class="small">This deletes {e.name}'s marks in {offering.code} too.</p>
-                <button type="submit" class="button-danger">Remove {e.name}</button>
-              </form>
-            </details>
           </div>
         </li>
       ))

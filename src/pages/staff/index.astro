@@ -24,7 +24,7 @@ const pastCount = past.reduce((n, s) => n + s.list.length, 0);
   <h1>My courses</h1>
   <p class="lede">Hi, {staff.name}. Set up assessment, upload marks, and release results to your students.</p>
 
-  {offerings.length === 0 && <p class="muted">You don't convene any courses yet.</p>}
+  {offerings.length === 0 && <div class="empty"><p>You don't convene any courses yet. Create one below.</p></div>}
 
   {
     latest && (
@@ -40,9 +40,9 @@ const pastCount = past.reduce((n, s) => n + s.list.length, 0);
   }
 
   <details class="disclose section-gap" id="new-offering" open={offerings.length === 0}>
-    <summary>New course offering</summary>
+    <summary>New course</summary>
     <div class="card narrow" style="margin:0">
-      <OfferingForm action="/api/staff/offerings" submitLabel="Create offering" idPrefix="new" />
+      <OfferingForm action="/api/staff/offerings" submitLabel="Create course" idPrefix="new" />
     </div>
   </details>
 
@@ -50,10 +50,10 @@ const pastCount = past.reduce((n, s) => n + s.list.length, 0);
     past.length > 0 && (
       <details class="section section-gap">
         <summary>
-          Past offerings <span class="muted">({pastCount})</span>
+          Past courses <span class="muted">({pastCount})</span>
         </summary>
         {past.map((s) => (
-          <section aria-labelledby={`s-${s.key}`} style="margin-top:1rem">
+          <section aria-labelledby={`s-${s.key}`}>
             <h3 id={`s-${s.key}`}>{s.label}</h3>
             <ul class="course-list">
               {s.list.map((o) => (

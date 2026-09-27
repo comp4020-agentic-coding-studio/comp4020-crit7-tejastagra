@@ -30,7 +30,7 @@ const current = summary.courses.filter((v) => v.inProgress).length;
       <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`${summary.points} points ÷ ${summary.gpaUnits} units`} />
     </dl>
   </div>
-  {past.length === 0 && <p class="muted">No finished courses yet.</p>}
+  {past.length === 0 && <div class="empty"><p>No finished courses yet. Once a course's grade is released it moves here.</p></div>}
   {
     past.map((s) => (
       <section aria-labelledby={`sem-${s.key}`} class="section-gap">

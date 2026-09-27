@@ -1,8 +1,9 @@
 ---
-// One course, as a student sees it (from the UI/UX review): one status box
-// (where you stand, your target and what it needs), then one box per
-// assessment item, with the what-if inputs inside the unreleased items. The
-// what-if is a GET form: scores ride in the query string, nothing is stored
+// One course, as a student sees it (UI/UX + design reviews): the assessment
+// boxes in the main column, with what-if inputs inside unreleased items; the
+// status box (where you stand, target, what it needs) and the what-if answer
+// in a side column on wide screens, after the items on a phone. The what-if
+// is a GET form: scores ride in the query string, nothing is stored
 // (docs/harness/architecture.md).
 import Field from "../../../components/Field.astro";
 import GradeBadge from "../../../components/GradeBadge.astro";
@@ -33,40 +34,44 @@ const self = `/courses/${course.id}/`;
 const back = releasedGrade ? { href: "/archive/", label: "Archive" } : { href: "/", label: "Dashboard" };
 ---
 
-<Layout title={`${course.code} ${course.title}`}>
-  <div class="one-col">
-    <p class="small"><a href={back.href}>← {back.label}</a></p>
-    <h1>{course.code}</h1>
-    <p class="lede" style="margin-bottom:1.5rem">
-      {course.title} · {termLabel(course.term, course.year)} · {course.units} units
-    </p>
+<Layout title={`${course.code} ${course.title}`} section={releasedGrade ? "/archive/" : "/"}>
+  <p class="small"><a href={back.href}>← {back.label}</a></p>
+  <h1>{course.code}</h1>
+  <p class="lede" style="margin-bottom:1.5rem">
+    {course.title} · {termLabel(course.term, course.year)} · {course.units} units
+  </p>
 
-    <section class="card" aria-labelledby="status-heading">
+  <div class="detail-layout">
+    <section class="card detail-side" aria-labelledby="status-heading">
       <h2 id="status-heading" class="visually-hidden">Where you stand</h2>
       {
         releasedGrade && (
-          <p>
-            <GradeBadge grade={releasedGrade} /> <strong>{GRADE_NAMES[releasedGrade]}</strong> · {pointsLabel(releasedGrade)}
-          </p>
-        )
-      }
-      {
-        releasedGrade && view.mark !== null && gradeForMark(view.mark) !== releasedGrade &&
-          ["HD", "D", "CR", "P", "N"].includes(releasedGrade) && (
-            <p class="muted small">
-              Your assessment marks add up to {fmtMark(view.mark)} ({gradeForMark(view.mark)}), but your released grade is{" "}
-              {releasedGrade}. Final marks are often scaled; the released grade is the one that counts.
+          <>
+            <p class="status-label">Released grade</p>
+            <p class="status-number">
+              <GradeBadge grade={releasedGrade} /> {GRADE_NAMES[releasedGrade]}
             </p>
-          )
+            <p class="status-sub">{pointsLabel(releasedGrade)}</p>
+            {view.mark !== null && gradeForMark(view.mark) !== releasedGrade && ["HD", "D", "CR", "P", "N"].includes(releasedGrade) && (
+              <p class="muted small" style="margin-top:1rem">
+                Your assessment marks add up to {fmtMark(view.mark)} ({gradeForMark(view.mark)}), but your released grade is{" "}
+                {releasedGrade}. Final marks are often scaled; the released grade is the one that counts.
+              </p>
+            )}
+          </>
+        )
       }
       {
         !releasedGrade && (
           <>
             {trackingGrade && standing.averageSoFar !== null ? (
-              <p>
-                <GradeBadge grade={trackingGrade} tracking /> You're averaging <strong>{fmtPercent(standing.averageSoFar)}</strong> on
-                the {fmtPercent(standing.weightMarked)} of the course released so far.
-              </p>
+              <>
+                <p class="status-label">Averaging so far</p>
+                <p class="status-number">
+                  {fmtPercent(standing.averageSoFar)} <GradeBadge grade={trackingGrade} tracking />
+                </p>
+                <p class="status-sub">on the {fmtPercent(standing.weightMarked)} of the course released so far</p>
+              </>
             ) : (
               <p class="muted">No marks released yet.</p>
             )}
@@ -75,43 +80,30 @@ const back = releasedGrade ? { href: "/archive/", label: "Archive" } : { href: "
                 <div
                   class="progress"
                   role="img"
-                  aria-label={`${fmtMark(standing.secured)} marks banked, ${fmtMark(lost)} lost, ${fmtMark(standing.weightRemaining)} still to come`}
+                  aria-label={`${fmtMark(standing.secured)} marks banked, ${fmtMark(lost)} lost, ${fmtMark(standing.weightRemaining)} still to come${target !== null ? `, target ${fmtMark(target)}` : ""}`}
                 >
                   <span class="secured" style={`width:${standing.secured}%`} />
                   <span class="remaining" style={`left:${standing.weightMarked}%;width:${standing.weightRemaining}%`} />
+                  {target !== null && <span class="target" style={`left:${Math.min(100, target)}%`} />}
                 </div>
                 <ul class="legend" style="margin-bottom:1rem">
                   <li><i style="background:var(--good)" />{fmtMark(standing.secured)} banked</li>
-                  <li><i style="background:transparent" />{fmtMark(lost)} lost</li>
-                  <li><i style="background:oklch(0.2 0.01 73 / 16%)" />{fmtMark(standing.weightRemaining)} to come</li>
+                  <li><i style="background:oklch(0.2 0.01 73 / 8%)" />{fmtMark(lost)} lost</li>
+                  <li><i class="hatch" />{fmtMark(standing.weightRemaining)} to come</li>
+                  {target !== null && <li><i class="tick" />Target {fmtMark(target)}</li>}
                 </ul>
               </>
             )}
             <p id="target">
               {target === null && "Set a target to see what you need on the rest."}
-              {needed?.status === "possible" && (
-                <>
-                  <strong>Target {targetLabel}.</strong> You need <strong>{fmtPercent(needed.neededPercent!)}</strong> on average
-                  across the {fmtPercent(standing.weightRemaining)} still to come.
-                </>
-              )}
-              {needed?.status === "secured" && (
-                <>
-                  <strong>Target {targetLabel}: locked in.</strong> You've banked {fmtMark(standing.secured)} marks, so you reach it
-                  even with zero on the rest.
-                </>
-              )}
-              {needed?.status === "out-of-reach" && (
-                <>
-                  <strong>Target {targetLabel}: out of reach.</strong> Full marks on the rest gets you to{" "}
-                  {fmtMark(standing.maxPossible)} at most.
-                </>
-              )}
-              {needed?.status === "finished" && (
-                <>
-                  <strong>Target {targetLabel}.</strong> Everything's marked: you finished on {fmtMark(standing.secured)}.
-                </>
-              )}
+              {needed?.status === "possible" &&
+                `Target ${targetLabel}: you need ${fmtPercent(needed.neededPercent!)} on average across the ${fmtPercent(standing.weightRemaining)} still to come.`}
+              {needed?.status === "secured" &&
+                `Target ${targetLabel}: locked in. You've banked ${fmtMark(standing.secured)} marks, so you reach it even with zero on the rest.`}
+              {needed?.status === "out-of-reach" &&
+                `Target ${targetLabel}: out of reach. Full marks on the rest gets you to ${fmtMark(standing.maxPossible)} at most.`}
+              {needed?.status === "finished" &&
+                `Target ${targetLabel}. Everything's marked: you finished on ${fmtMark(standing.secured)}.`}
             </p>
             <details class="disclose" open={target === null}>
               <summary>{target === null ? "Set a target" : "Change target"}</summary>
@@ -153,17 +145,11 @@ const back = releasedGrade ? { href: "/archive/", label: "Archive" } : { href: "
       }
     </section>
 
-    <section aria-labelledby="assessments-heading" id="what-if">
-      <h2 id="assessments-heading">Assessment</h2>
-      {course.assessments.length === 0 && <p class="muted">Your convenor hasn't set up the assessment yet.</p>}
-      {
-        canWhatIf && (
-          <p class="small muted" style="margin-top:-0.5rem">
-            Try marks for what's still to come to see where you'd land. Nothing you try is saved or sent to your convenor.
-          </p>
-        )
-      }
-      <form method="get" action={`${self}#what-if`}>
+    <section class="detail-main" aria-labelledby="assessments-heading">
+      <h2 id="assessments-heading" style="margin-top:0">Assessment</h2>
+      {course.assessments.length === 0 && <div class="empty"><p>Your convenor hasn't set up the assessment yet.</p></div>}
+      {canWhatIf && <p class="section-hint">Try marks for what's still to come. Nothing you try is saved or sent to your convenor.</p>}
+      <form method="get" action={`${self}#whatif`}>
         <ul class="item-list">
           {course.assessments.map((a) => (
             <li>
@@ -171,16 +157,16 @@ const back = releasedGrade ? { href: "/archive/", label: "Archive" } : { href: "
                 <div class="item-top">
                   <div>
                     <div class="item-name">{a.name}</div>
-                    <div class="item-sub">
-                      {fmtMark(a.weight)}% of course
-                      {a.score === null && <> · {a.released ? "No mark" : "Not released"}</>}
-                    </div>
+                    <div class="item-sub">{fmtMark(a.weight)}% of course</div>
                   </div>
-                  {a.score !== null && (
+                  {a.score !== null ? (
                     <div class="item-score">
-                      {fmtMark(a.score)} / {fmtMark(a.outOf)}
-                      <span>{fmtPercent(percentage(a.score, a.outOf))}</span>
+                      {fmtMark(a.score)}
+                      <span class="of"> / {fmtMark(a.outOf)}</span>
+                      <span class="pct">{fmtPercent(percentage(a.score, a.outOf))}</span>
                     </div>
+                  ) : (
+                    <span class="muted small">{a.released ? "No mark" : "Not released"}</span>
                   )}
                 </div>
                 {a.score === null && needed?.status === "possible" && (
@@ -219,75 +205,81 @@ const back = releasedGrade ? { href: "/archive/", label: "Archive" } : { href: "
           )
         }
       </form>
+    </section>
 
-      {
-        scenario && (
-          <div class="scenario" role="status">
-            <h3>With those marks</h3>
-            {scenario.mark !== null && scenario.grade !== null ? (
-              <>
-                <p>
-                  You'd finish on <strong>{fmtMark(scenario.mark)}</strong> <GradeBadge grade={scenario.grade} tracking />{" "}
-                  {GRADE_NAMES[scenario.grade]}.
-                </p>
-                <p>
-                  Your career GPA would go from <strong>{fmtGpa(scenario.gpaNow)}</strong> to{" "}
-                  <strong>{fmtGpa(scenario.gpaAfter)}</strong>
+    {
+      scenario && (
+        <div class="whatif detail-result" id="whatif" role="status">
+          {scenario.mark !== null && scenario.grade !== null ? (
+            <>
+              <p class="whatif-label">With those marks you'd finish on</p>
+              <p class="whatif-mark">
+                {fmtMark(scenario.mark)} <GradeBadge grade={scenario.grade} hypothetical />
+              </p>
+              <p class="whatif-grade">{GRADE_NAMES[scenario.grade]}</p>
+              <dl class="whatif-gpa">
+                <dt>Career GPA</dt>
+                <dd>
+                  {fmtGpa(scenario.gpaNow)} → {fmtGpa(scenario.gpaAfter)}
                   {scenario.gpaNow !== null && scenario.gpaAfter !== null && (
-                    <>
+                    <span>
                       {" "}
                       (
                       {scenario.gpaAfter >= scenario.gpaNow
                         ? `up ${(scenario.gpaAfter - scenario.gpaNow).toFixed(3)}`
                         : `down ${(scenario.gpaNow - scenario.gpaAfter).toFixed(3)}`}
                       )
-                    </>
+                    </span>
                   )}
-                  .
+                </dd>
+              </dl>
+              {target !== null && (
+                <p class:list={["whatif-target", { met: scenario.mark >= target }]}>
+                  {scenario.mark >= target && (
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  )}
+                  {scenario.mark >= target
+                    ? `That meets your target of ${fmtMark(target)}.`
+                    : `That's ${fmtMark(target - scenario.mark)} short of your target of ${fmtMark(target)}.`}
                 </p>
-                {target !== null && (
-                  <p class="small">
-                    {scenario.mark >= target
-                      ? `That meets your target of ${fmtMark(target)}.`
-                      : `That's ${fmtMark(target - scenario.mark)} short of your target of ${fmtMark(target)}.`}
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <p>
-                  You'd have <strong>{fmtMark(scenario.standing.secured)}</strong> marks banked, averaging{" "}
-                  {fmtPercent(scenario.standing.averageSoFar ?? 0)}, with {fmtPercent(scenario.standing.weightRemaining)} of the
-                  course still to come.
-                </p>
-                {scenario.needed?.status === "possible" && (
-                  <p>
-                    To reach your target you'd then need <strong>{fmtPercent(scenario.needed.neededPercent!)}</strong> on the rest.
-                  </p>
-                )}
-                {scenario.needed?.status === "secured" && <p>That would lock in your target.</p>}
-                {scenario.needed?.status === "out-of-reach" && <p>Your target would be out of reach.</p>}
-                <p class="muted small">Fill in every item to see your final grade and GPA.</p>
-              </>
-            )}
-          </div>
-        )
-      }
-    </section>
-
+              )}
+            </>
+          ) : (
+            <>
+              <p class="whatif-label">With those marks you'd have banked</p>
+              <p class="whatif-mark">{fmtMark(scenario.standing.secured)}</p>
+              <p class="whatif-grade">
+                course marks, averaging {fmtPercent(scenario.standing.averageSoFar ?? 0)}, with{" "}
+                {fmtPercent(scenario.standing.weightRemaining)} still to come
+              </p>
+              {scenario.needed?.status === "possible" && (
+                <p class="whatif-target">To reach your target you'd then need {fmtPercent(scenario.needed.neededPercent!)} on the rest.</p>
+              )}
+              {scenario.needed?.status === "secured" && <p class="whatif-target met">That would lock in your target.</p>}
+              {scenario.needed?.status === "out-of-reach" && <p class="whatif-target">Your target would be out of reach.</p>}
+              <p class="muted small" style="margin:0.5rem 0 0">Fill in every item to see your final grade and GPA.</p>
+            </>
+          )}
+        </div>
+      )
+    }
     {
       !releasedGrade && (
-        <details class="section-gap">
+        <details class="section detail-how">
           <summary>How this is worked out</summary>
-          <p class="small muted">
-            Each item counts for its weight: a mark of 15/20 on a 15% item banks 11.25 course marks. "Need" is the average
-            percentage across everything not yet released that lands you on your target; doing better on one item lets you do
-            worse on another. It assumes the weights add up to 100% and every item is marked out of its full weight. Hurdles,
-            scaling and rounding are up to your convenor, and the released grade is what counts.
-          </p>
-          {!standing.weightsSumTo100 && standing.totalWeight > 0 && (
-            <p class="small muted">This course's weights add up to {fmtMark(standing.totalWeight)}%, not 100%.</p>
-          )}
+          <div>
+            <p class="small muted">
+              Each item counts for its weight: a mark of 15/20 on a 15% item banks 11.25 course marks. "Need" is the average
+              percentage across everything not yet released that lands you on your target; doing better on one item lets you
+              do worse on another. It assumes the weights add up to 100% and every item is marked out of its full weight.
+              Hurdles, scaling and rounding are up to your convenor, and the released grade is what counts.
+            </p>
+            {!standing.weightsSumTo100 && standing.totalWeight > 0 && (
+              <p class="small muted">This course's weights add up to {fmtMark(standing.totalWeight)}%, not 100%.</p>
+            )}
+          </div>
         </details>
       )
     }

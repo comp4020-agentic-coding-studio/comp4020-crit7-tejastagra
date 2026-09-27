@@ -1,0 +1,30 @@
+---
+// A status as a tinted pill with an icon (design review R5): "done" is
+// green with a tick, "todo" is gold with a clock, "neutral" is grey. Words
+// always carry the meaning; the colour and icon are second signals.
+interface Props {
+  kind: "done" | "todo" | "neutral";
+  label: string;
+}
+const { kind, label } = Astro.props;
+const cls = { done: "status-on", todo: "status-todo", neutral: "status-off" }[kind];
+---
+
+<span class:list={["status", cls]}>
+  {
+    kind === "done" && (
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    )
+  }
+  {
+    kind === "todo" && (
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.75" />
+        <path d="M8 4.75V8l2.25 1.5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+      </svg>
+    )
+  }
+  {label}
+</span>

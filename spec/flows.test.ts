@@ -225,11 +225,11 @@ describe("staff release results; the student sees exactly what's released", () =
     const itemId = item2.split("/").at(-1);
     // 32 + 60 × 0.75 = 77 → D
     const text = textOf(await student.html(`${studentCourse}?w${itemId}=75`));
-    expect(text).toContain("You'd finish on 77");
+    expect(text).toMatch(/you'd finish on\s*77/);
     expect(text).toContain("Distinction");
-    expect(text).toContain("Your career GPA would go from");
+    expect(text).toMatch(/Career GPA\s*\S+ → \d\.\d{3}/);
     // nothing stuck: a plain reload shows no scenario, and staff still see 90
-    expect(textOf(await student.html(studentCourse))).not.toContain("You'd finish on");
+    expect(textOf(await student.html(studentCourse))).not.toContain("With those marks");
   });
 
   it("staff release a final grade and the student's GPA counts it", async () => {

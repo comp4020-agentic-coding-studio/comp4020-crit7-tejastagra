@@ -67,12 +67,12 @@ const plan = summary?.plan;
 
         <h2>This semester</h2>
         {current.length > 0 && (
-          <p class="small muted" style="margin-top:-0.5rem">
-            A dashed grade is where you're tracking now, not a released result.
-          </p>
+          <p class="section-hint">A dashed grade is where you're tracking now, not a released result.</p>
         )}
         {current.length === 0 ? (
-          <p class="muted">No courses in progress. Courses appear here when your convenor enrols you.</p>
+          <div class="empty">
+            <p>No courses in progress. Courses appear here when your convenor enrols you.</p>
+          </div>
         ) : (
           <ul class="course-list">
             {current.map((v) => (

@@ -1,7 +1,8 @@
 ---
 // One offering as a box for its convenor: code, title, and what's left to
-// do (items released, grades set). Same shape as the student course boxes.
+// do. The job to do gets the gold "todo" chip (design review R5).
 import type { OfferingSummary } from "../../lib/data/staff";
+import StatusChip from "../StatusChip.astro";
 
 interface Props {
   offering: OfferingSummary;
@@ -17,9 +18,10 @@ const status = done ? "Graded" : o.released < o.items ? `${o.items - o.released}
       <span class="code">{o.code}</span>
       <span class="title">{o.title}</span>
       <span class="meta">
-        {o.students} students · {o.released} of {o.items} released · {o.graded} of {o.students} graded
+        <span class="nw">{o.students} students</span> · <span class="nw">{o.released} of {o.items} released</span> ·{" "}
+        <span class="nw">{o.graded} of {o.students} graded</span>
       </span>
     </span>
-    <span class:list={["status", done ? "status-on" : "status-off"]}>{status}</span>
+    <StatusChip kind={done ? "done" : "todo"} label={status} />
   </a>
 </li>

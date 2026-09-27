@@ -2,7 +2,7 @@
 
 ANU Grades is the results system I wish ANU had. It has two sides.
 
-**Staff** convene course offerings. They set up the assessment items, enrol
+**Staff** convene courses. They set up the assessment items, enrol
 students by uni ID (one at a time or from a class-list CSV), and enter marks
 or upload them from a spreadsheet. Each item stays hidden until they release
 it, and they set final grades (with a "fill from marks" shortcut).
