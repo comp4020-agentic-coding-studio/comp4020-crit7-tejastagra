@@ -188,7 +188,7 @@ code {
   display: none;
 }
 
-/* with JS, phones fold the student links behind a menu button; without JS
+/* with JS, phones fold the logged-in links behind a menu button; without JS
    they simply show in a row under the lockup */
 @media (width < 720px) {
   .js .nav-collapsible .menu-toggle {
@@ -494,11 +494,11 @@ main {
   line-height: 1.3;
 }
 .course-card .title {
-  display: block;
+  display: -webkit-box;
   font-size: 0.875rem;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .course-card .meta {
   display: block;
@@ -606,6 +606,7 @@ tfoot td {
 }
 .legend i {
   display: inline-block;
+  border: 1px solid oklch(0.2 0.01 73 / 25%);
   width: 10px;
   height: 10px;
   border-radius: 2px;
@@ -971,6 +972,11 @@ summary h3 {
   .stats.stats-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .stats.stats-1,
+  .page-head .stats.stats-1 {
+    grid-template-columns: minmax(12rem, 1fr);
+    min-width: 12rem;
+  }
   .page-head .stats.stats-2 {
     min-width: 20rem;
   }
@@ -984,6 +990,176 @@ summary h3 {
   .split.split-side {
     grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr);
   }
+}
+
+/* boxes for assessment items (student course page, staff offering page) */
+.item-list {
+  display: grid;
+  gap: var(--s-md);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.item-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-xs);
+  height: 100%;
+  padding: var(--s-md);
+  border: 1px solid var(--divider);
+}
+a.item-box {
+  color: var(--text);
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+a.item-box:hover,
+a.item-box:focus-visible {
+  color: var(--text);
+  background: var(--gold-soft);
+}
+.item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--s-sm);
+}
+.item-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1.3;
+}
+.item-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.item-score {
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.item-score span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.item-box .field {
+  margin: var(--s-xs) 0 0;
+}
+.item-box .field label {
+  font-size: 0.8rem;
+}
+.try-input {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+.try-input input {
+  max-width: 7rem;
+}
+.try-input span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* <details> whose summary looks like a secondary button with a caret */
+details.disclose > summary {
+  display: inline-flex;
+  gap: var(--s-sm);
+  min-height: var(--tap);
+  padding: 0.35rem var(--s-md);
+  border: 2px solid var(--gold);
+  border-radius: var(--radius);
+  color: var(--link);
+  font-size: 0.9rem;
+  font-weight: 600;
+  list-style: none;
+}
+details.disclose > summary::-webkit-details-marker {
+  display: none;
+}
+details.disclose > summary::after {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.15em) rotate(45deg);
+  transition: transform 0.15s;
+}
+details.disclose[open] > summary::after {
+  transform: translateY(0.1em) rotate(-135deg);
+}
+details.disclose > summary:hover {
+  background: var(--gold-soft);
+}
+details.disclose[open] > summary {
+  margin-bottom: var(--s-md);
+}
+/* a disclosure used as a section: plain heading-like summary with a caret */
+details.section > summary {
+  gap: var(--s-sm);
+  list-style: none;
+  color: var(--gold);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+details.section > summary::-webkit-details-marker {
+  display: none;
+}
+details.section > summary::before {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+details.section[open] > summary::before {
+  transform: rotate(45deg);
+}
+details.section > summary .muted {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+.section-gap {
+  margin-top: var(--s-xl);
+}
+
+/* data entry (marks, grades): a table for keyboard flow, dressed as row
+   boxes instead of stripes (visual-design.md: tables only where justified) */
+table.rows {
+  border-collapse: separate;
+  border-spacing: 0 var(--s-sm);
+}
+table.rows thead th {
+  background: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding-block: 0;
+}
+table.rows tbody tr {
+  background: none;
+}
+table.rows td {
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+}
+table.rows td:first-child {
+  border-left: 1px solid var(--divider);
+}
+table.rows td:last-child {
+  border-right: 1px solid var(--divider);
+}
+
+.one-col {
+  max-width: 52rem;
 }
 
 /* page-specific grid shapes */

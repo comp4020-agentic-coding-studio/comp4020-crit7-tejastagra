@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ request, locals, params, redirect }) => {
       }
       saveMarks(staff.id, offeringId, item.id, entries);
       notify();
-      return back("notice", item.released ? "Marks saved. Students can see them now." : "Marks saved. They're hidden until you release this item.", "#marks");
+      return back("notice", item.released ? "Marks saved. Students can see them now." : "Marks saved. Students won't see them until you release this item.", "#marks");
     }
     case "upload-marks": {
       const { rows, problems } = parseMarksCsv(await csvText(form), item.outOf);
@@ -56,7 +56,7 @@ export const POST: APIRoute = async ({ request, locals, params, redirect }) => {
       const released = form.get("_action") === "release";
       updateItem(staff.id, offeringId, item.id, { released });
       notify();
-      return back("notice", released ? `${item.name} is released. Students can see their marks.` : `${item.name} is hidden from students again.`);
+      return back("notice", released ? `${item.name} is released. Students can see their marks.` : `${item.name} is unreleased: students see it as "Not released" again.`);
     }
     case "update": {
       const parsed = parseItem(form);

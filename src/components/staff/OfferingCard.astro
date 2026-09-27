@@ -1,0 +1,25 @@
+---
+// One offering as a box for its convenor: code, title, and what's left to
+// do (items released, grades set). Same shape as the student course boxes.
+import type { OfferingSummary } from "../../lib/data/staff";
+
+interface Props {
+  offering: OfferingSummary;
+}
+const { offering: o } = Astro.props;
+const done = o.students > 0 && o.graded === o.students;
+const status = done ? "Graded" : o.released < o.items ? `${o.items - o.released} not released` : "Grades to set";
+---
+
+<li>
+  <a class="course-card" href={`/staff/offerings/${o.id}/`}>
+    <span class="info">
+      <span class="code">{o.code}</span>
+      <span class="title">{o.title}</span>
+      <span class="meta">
+        {o.students} students · {o.released} of {o.items} released · {o.graded} of {o.students} graded
+      </span>
+    </span>
+    <span class:list={["status", done ? "status-on" : "status-off"]}>{status}</span>
+  </a>
+</li>

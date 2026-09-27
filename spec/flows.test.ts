@@ -91,7 +91,7 @@ describe("logged-in pages meet the accessibility floor", () => {
   beforeAll(async () => {
     await student.login(DEMO_STUDENT.uniId, DEMO_STUDENT.password);
     await staff.login(DEMO_STAFF.uniId, DEMO_STAFF.password);
-    studentCourse = await firstHref(student, "/archive/", 'a[href^="/courses/"]');
+    studentCourse = await firstHref(student, "/", 'a[href^="/courses/"]');
     staffOffering = await firstHref(staff, "/staff/", 'a[href^="/staff/offerings/"]');
     staffItem = await firstHref(staff, staffOffering, 'a[href*="/items/"]');
   });
@@ -115,8 +115,9 @@ describe("logged-in pages meet the accessibility floor", () => {
     expect(textOf(await student.html(scenario))).toContain("With those marks");
     await check(student, scenario);
   });
-  it("staff offering and item pages", async () => {
+  it("staff offering, class list and item pages", async () => {
     await check(staff, staffOffering);
+    await check(staff, `${staffOffering}students/`);
     await check(staff, staffItem);
   });
 });
@@ -172,17 +173,17 @@ describe("staff release results; the student sees exactly what's released", () =
     const links = [...doc.querySelectorAll('a[href*="/items/"]')].map((a) => a.getAttribute("href")!);
     expect(links).toHaveLength(2);
     [item1, item2] = links.map((l) => `/api${l.replace(/\/$/, "")}`);
-    expect(textOf(doc.body.outerHTML)).toContain("Hidden");
+    expect(textOf(doc.body.outerHTML)).toContain("Not released");
   });
 
   it("staff enrol the student from a class-list CSV", async () => {
     const res = await staff.post(api, { _action: "enrol-csv", csv: `uni_id,name\n${uniId},Test Student\nnot-an-id,Bob` });
     expect(Client.location(res, baseUrl).searchParams.get("notice")).toContain("Enrolled 1 student");
-    expect(textOf(await staff.html(offering))).toContain(uniId);
+    expect(textOf(await staff.html(`${offering}students/`))).toContain(uniId);
   });
 
-  it("the student sees the course, with nothing released yet", async () => {
-    studentCourse = await firstHref(student, "/archive/", 'a[href^="/courses/"]');
+  it("the student sees the course on their dashboard, with nothing released yet", async () => {
+    studentCourse = await firstHref(student, "/", 'a[href^="/courses/"]');
     const text = textOf(await student.html(studentCourse));
     expect(text).toContain("COMP9999");
     expect(text).toContain("Not released");
@@ -226,6 +227,12 @@ describe("staff release results; the student sees exactly what's released", () =
     expect(Client.location(res, baseUrl).searchParams.get("notice")).toContain("Filled 1 grade");
     const text = textOf(await student.html("/archive/"));
     expect(text).toContain("7.000");
+  });
+
+  it("the archive shows the now-finished course as a course box, not a table", async () => {
+    const doc = new JSDOM(await student.html("/archive/")).window.document;
+    expect(doc.querySelector(".course-card")).toBeTruthy();
+    expect(doc.querySelector("table")).toBeNull();
   });
 
   it("staff rejects a mark over what the item is out of, saving nothing", async () => {

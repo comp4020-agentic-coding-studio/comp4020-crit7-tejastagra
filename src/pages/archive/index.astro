@@ -1,82 +1,50 @@
 ---
-// The archive: every course, newest session first, one A2-style table per
-// session laid out across the width, with each session's GPA and the
-// career GPA.
-import GradeBadge from "../../components/GradeBadge.astro";
+// The archive: every finished course as the same boxes the dashboard uses,
+// grouped by session, newest first (visual-design.md: boxes over tables).
+// This semester's courses live on the dashboard, so they're not repeated.
+import CourseCard from "../../components/CourseCard.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listStudentCourses } from "../../lib/data";
-import { fmtGpa, fmtPercent, plural } from "../../lib/format";
+import { fmtGpa, plural } from "../../lib/format";
 import { summarise } from "../../lib/record";
 
 const student = Astro.locals.user!;
 const summary = summarise(student, listStudentCourses(student.uniId));
+const past = summary.semesters.filter((s) => !s.inProgress);
+const current = summary.courses.filter((v) => v.inProgress).length;
 ---
 
 <Layout title="Archive">
   <div class="page-head">
     <div>
       <h1>Archive</h1>
-      <p class="lede">Every course you've taken, newest first. Open one for its released marks and what-ifs.</p>
+      <p class="lede">
+        Every finished course, newest first.
+        {current > 0 && <> This semester's {plural(current, "course")} {current === 1 ? "is" : "are"} on your <a href="/">dashboard</a>.</>}
+      </p>
     </div>
-    <dl class="stats stats-2">
+    <dl class="stats stats-1">
       <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`${summary.points} points ÷ ${summary.gpaUnits} units`} />
-      <Stat label="Courses" value={String(summary.courses.length)} note={plural(summary.semesters.length, "session")} />
     </dl>
   </div>
-  {summary.semesters.length === 0 && <p class="muted">No courses yet. They appear here when a convenor enrols you.</p>}
-  <div class="grid-auto">
-    {
-      summary.semesters.map((s) => (
-        <section aria-labelledby={`sem-${s.key}`}>
-          <div class="table-head">
-            <h2 id={`sem-${s.key}`}>{s.label}</h2>
-            <span class="muted small">
-              {s.inProgress ? "In progress" : s.gpa !== null ? `Session GPA ${fmtGpa(s.gpa)}` : "No GPA results"}
-            </span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Course</th>
-                  <th scope="col" class="num">Units</th>
-                  <th scope="col" class="grade-cell">Grade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {s.courses.map((v) => (
-                  <tr>
-                    <td class="course-cell">
-                      <a href={`/courses/${v.course.id}/`}>{v.course.code}</a>
-                      <span>{v.course.title}</span>
-                      {v.inProgress && (
-                        <span>
-                          {v.standing.averageSoFar === null ? "Nothing released yet" : `${fmtPercent(v.standing.averageSoFar)} so far`}
-                          {v.needed?.status === "possible" && ` · need ${fmtPercent(v.needed.neededPercent!)} on the rest`}
-                          {v.needed?.status === "secured" && " · target secured"}
-                          {(v.needed?.status === "out-of-reach" || v.needed?.status === "finished") && " · target out of reach"}
-                        </span>
-                      )}
-                    </td>
-                    <td class="num">{v.course.units}</td>
-                    <td class="grade-cell">
-                      {v.releasedGrade && <GradeBadge grade={v.releasedGrade} />}
-                      {!v.releasedGrade && v.trackingGrade && <GradeBadge grade={v.trackingGrade} tracking />}
-                      {!v.releasedGrade && !v.trackingGrade && <span class="muted small">—</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ))
-    }
-  </div>
-  <p class="muted small" style="margin-top:1.5rem">
-    GPA is worked out the ANU way: grade points × units, summed and divided by units, to three decimal places. Fails
-    count as units with 0 points; WD and CRS don't count. A dashed grade is what an in-progress course is tracking at,
-    not a released result. <a href="/readme/">How this works</a>
+  {past.length === 0 && <p class="muted">No finished courses yet.</p>}
+  {
+    past.map((s) => (
+      <section aria-labelledby={`sem-${s.key}`} class="section-gap">
+        <div class="table-head">
+          <h2 id={`sem-${s.key}`}>{s.label}</h2>
+          <span class="muted small">{s.gpa !== null ? `Session GPA ${fmtGpa(s.gpa)}` : "No GPA results"}</span>
+        </div>
+        <ul class="course-list">
+          {s.courses.map((v) => (
+            <CourseCard view={v} />
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+  <p class="muted small section-gap">
+    GPA = grade points × units ÷ units, to three decimals. Fails count; WD and CRS don't. <a href="/readme/">How this works</a>
   </p>
 </Layout>

@@ -1,0 +1,75 @@
+---
+// An offering's class list: one box per student with its own remove (behind
+// a confirm step), plus enrol-one and upload-a-list. Split out of the
+// offering page by the UI/UX review so marking isn't crowded by admin.
+import Field from "../../../../../components/Field.astro";
+import Layout from "../../../../../layouts/Layout.astro";
+import { getOffering } from "../../../../../lib/data";
+import { termLabel } from "../../../../../lib/record";
+
+const staff = Astro.locals.user!;
+const offering = getOffering(staff.id, Number(Astro.params.id));
+if (!offering) return new Response("Course not found", { status: 404 });
+const base = `/api/staff/offerings/${offering.id}`;
+---
+
+<Layout title={`Class list, ${offering.code} (staff)`}>
+  <p class="small"><a href={`/staff/offerings/${offering.id}/`}>← {offering.code}</a></p>
+  <h1>Class list</h1>
+  <p class="lede">{offering.code} {offering.title} · {termLabel(offering.term, offering.year)} · {offering.enrolments.length} students</p>
+
+  <div class="actions">
+    <details class="disclose" id="enrol">
+      <summary>Enrol a student</summary>
+      <div class="card narrow" style="margin:0">
+        <form method="post" action={base}>
+          <input type="hidden" name="_action" value="enrol" />
+          <Field id="enrol-uni" label="Uni ID" name="uniId" required pattern="[uU][0-9]{7}" autocapitalize="none" placeholder="u1234567" />
+          <Field id="enrol-name" label="Name" name="name" required maxlength="80" />
+          <button type="submit">Enrol</button>
+        </form>
+      </div>
+    </details>
+    <details class="disclose" id="upload">
+      <summary>Upload a class list</summary>
+      <div class="card narrow" style="margin:0">
+        <form method="post" action={base} enctype="multipart/form-data">
+          <input type="hidden" name="_action" value="enrol-csv" />
+          <Field id="roster-file" label="CSV file" name="file" type="file" accept=".csv,text/csv,text/plain" hint="Columns: uni_id, name. A header row is fine." />
+          <div class="field">
+            <label for="roster-csv">Or paste it</label>
+            <textarea id="roster-csv" name="csv" rows="4" placeholder="u1234567,Priya Nair"></textarea>
+          </div>
+          <button type="submit">Upload class list</button>
+        </form>
+      </div>
+    </details>
+  </div>
+
+  {offering.enrolments.length === 0 && <p class="muted section-gap">Nobody is enrolled yet.</p>}
+  <ul class="item-list section-gap">
+    {
+      offering.enrolments.map((e) => (
+        <li>
+          <div class="item-box">
+            <div class="item-top">
+              <div>
+                <div class="item-name">{e.name}</div>
+                <div class="item-sub">{e.uniId}{e.grade && <> · final grade {e.grade}</>}</div>
+              </div>
+            </div>
+            <details>
+              <summary class="small">Remove<span class="visually-hidden"> {e.name}</span></summary>
+              <form method="post" action={base}>
+                <input type="hidden" name="_action" value="unenrol" />
+                <input type="hidden" name="enrolmentId" value={e.id} />
+                <p class="small">This deletes {e.name}'s marks in {offering.code} too.</p>
+                <button type="submit" class="button-danger">Remove {e.name}</button>
+              </form>
+            </details>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</Layout>

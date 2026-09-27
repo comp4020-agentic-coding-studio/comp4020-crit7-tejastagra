@@ -1,14 +1,14 @@
 ---
-// One course, as a student sees it: the released result and marks (read
-// only), their own target and what it needs, and a what-if calculator.
-// What-if scores ride in the query string and are never stored
+// One course, as a student sees it (from the UI/UX review): one status box
+// (where you stand, your target and what it needs), then one box per
+// assessment item, with the what-if inputs inside the unreleased items. The
+// what-if is a GET form: scores ride in the query string, nothing is stored
 // (docs/harness/architecture.md).
 import Field from "../../../components/Field.astro";
 import GradeBadge from "../../../components/GradeBadge.astro";
-import NeededPanel from "../../../components/NeededPanel.astro";
 import Layout from "../../../layouts/Layout.astro";
 import { getStudentCourse, listStudentCourses } from "../../../lib/data";
-import { fmtGpa, fmtMark, fmtPercent } from "../../../lib/format";
+import { fmtGpa, fmtMark, fmtPercent, neededScore } from "../../../lib/format";
 import { GRADE_NAMES, GRADE_THRESHOLDS, gradeForMark, percentage } from "../../../lib/grading";
 import { pointsLabel, readOverrides, summarise, termLabel, viewCourse, whatIf } from "../../../lib/record";
 
@@ -21,156 +21,213 @@ const { standing, releasedGrade, trackingGrade, needed } = view;
 const lost = standing.weightMarked - standing.secured;
 const presets = Object.entries(GRADE_THRESHOLDS) as [keyof typeof GRADE_THRESHOLDS, number][];
 const isPreset = presets.some(([, m]) => m === course.targetMark);
+const target = course.targetMark;
+const targetLabel = target === null ? null : `${gradeForMark(target)} (${fmtMark(target)})`;
 
-// what-if: only for a course still in progress, on items without a released mark
 const open = course.assessments.filter((a) => a.score === null);
 const canWhatIf = !releasedGrade && open.length > 0;
 const overrides = readOverrides(Astro.url.searchParams);
 const summary = summarise(student, listStudentCourses(student.uniId));
 const scenario = canWhatIf && overrides.size > 0 ? whatIf(course, overrides, summary.released) : null;
 const self = `/courses/${course.id}/`;
+const back = releasedGrade ? { href: "/archive/", label: "Archive" } : { href: "/", label: "Dashboard" };
 ---
 
 <Layout title={`${course.code} ${course.title}`}>
-  <p class="small"><a href="/archive/">← Archive</a></p>
-  <h1>{course.code}</h1>
-  <p class="lede" style="margin-bottom:0.25rem">{course.title}</p>
-  <p class="muted small">{termLabel(course.term, course.year)} · {course.units} units</p>
+  <div class="one-col">
+    <p class="small"><a href={back.href}>← {back.label}</a></p>
+    <h1>{course.code}</h1>
+    <p class="lede" style="margin-bottom:1.5rem">
+      {course.title} · {termLabel(course.term, course.year)} · {course.units} units
+    </p>
 
-  <div class="split" style="margin-top:1.5rem">
-  <div class="col">
-  <section class="card" aria-labelledby="result-heading">
-    <h2 id="result-heading">{releasedGrade ? "Your result" : "Where you're at"}</h2>
-    {
-      releasedGrade && (
-        <p>
-          <GradeBadge grade={releasedGrade} /> {GRADE_NAMES[releasedGrade]} · {pointsLabel(releasedGrade)}
-        </p>
-      )
-    }
-    {
-      !releasedGrade && trackingGrade && standing.averageSoFar !== null && (
-        <p>
-          <GradeBadge grade={trackingGrade} tracking /> You're averaging <strong>{fmtPercent(standing.averageSoFar)}</strong>{" "}
-          on the {fmtPercent(standing.weightMarked)} of the course released so far.
-        </p>
-      )
-    }
-    {!releasedGrade && standing.averageSoFar === null && <p class="muted">No marks released yet.</p>}
-    {
-      standing.totalWeight > 0 && (
-        <>
-          <div
-            class="progress"
-            role="img"
-            aria-label={`${fmtMark(standing.secured)} marks banked, ${fmtMark(lost)} lost, ${fmtMark(standing.weightRemaining)} still to come`}
-          >
-            <span class="secured" style={`width:${standing.secured}%`} />
-            <span class="remaining" style={`left:${standing.weightMarked}%;width:${standing.weightRemaining}%`} />
-          </div>
-          <ul class="legend">
-            <li><i style="background:var(--good)" />{fmtMark(standing.secured)} banked</li>
-            <li><i style="background:#ebe6dc;border:1px solid #ccc" />{fmtMark(lost)} lost</li>
-            <li><i style="background:#d6cfc2" />{fmtMark(standing.weightRemaining)} to come</li>
-          </ul>
-        </>
-      )
-    }
-    {
-      releasedGrade && view.mark !== null && gradeForMark(view.mark) !== releasedGrade &&
-        ["HD", "D", "CR", "P", "N"].includes(releasedGrade) && (
-          <p class="muted small" style="margin-top:0.5rem">
-            Your assessment marks add up to {fmtMark(view.mark)} ({gradeForMark(view.mark)}), but your released grade is{" "}
-            {releasedGrade}. Final marks are often scaled; the released grade is the one that counts.
+    <section class="card" aria-labelledby="status-heading">
+      <h2 id="status-heading" class="visually-hidden">Where you stand</h2>
+      {
+        releasedGrade && (
+          <p>
+            <GradeBadge grade={releasedGrade} /> <strong>{GRADE_NAMES[releasedGrade]}</strong> · {pointsLabel(releasedGrade)}
           </p>
         )
-    }
-  </section>
-
-  <section id="assessments" aria-labelledby="assessments-heading">
-    <h2 id="assessments-heading" style="margin-top:0">Assessment</h2>
-    {course.assessments.length === 0 && <p class="muted">Your convenor hasn't set up the assessment yet.</p>}
-    {
-      course.assessments.length > 0 && (
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Item</th>
-                <th scope="col" class="num">Weight</th>
-                <th scope="col" class="num">Your mark</th>
-              </tr>
-            </thead>
-            <tbody>
-              {course.assessments.map((a) => (
-                <tr>
-                  <td>{a.name}</td>
-                  <td class="num">{fmtMark(a.weight)}%</td>
-                  <td class="num">
-                    {a.score !== null ? (
-                      <>
-                        <strong>
-                          {fmtMark(a.score)} / {fmtMark(a.outOf)}
-                        </strong>
-                        <span class="muted small" style="display:block">
-                          {fmtPercent(percentage(a.score, a.outOf))}
-                        </span>
-                      </>
-                    ) : (
-                      <span class="muted small">{a.released ? "No mark" : "Not released"}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    }
-  </section>
-  {needed && <NeededPanel needed={needed} assessments={course.assessments} />}
-  </div>
-
-  <div class="col">
-  {
-    canWhatIf && (
-      <section class="card" id="what-if" aria-labelledby="whatif-heading">
-        <h2 id="whatif-heading">What if?</h2>
-        <p class="muted small">
-          Try marks for what's still to come and see where you'd land. Nothing here is saved or sent to your convenor.
-        </p>
-        <form method="get" action={`${self}#what-if`}>
-          {open.map((a) => (
-            <Field
-              id={`w-${a.id}`}
-              label={`${a.name} (${fmtMark(a.weight)}%), out of ${fmtMark(a.outOf)}`}
-              name={`w${a.id}`}
-              type="number"
-              inputmode="decimal"
-              step="any"
-              min="0"
-              max={String(a.outOf)}
-              placeholder={`0 – ${fmtMark(a.outOf)}`}
-              value={overrides.has(a.id) ? String(overrides.get(a.id)) : undefined}
-            />
-          ))}
-          <div class="actions">
-            <button type="submit">Work it out</button>
-            {scenario && (
-              <a class="button button-secondary" href={`${self}#what-if`}>
-                Clear
-              </a>
+      }
+      {
+        releasedGrade && view.mark !== null && gradeForMark(view.mark) !== releasedGrade &&
+          ["HD", "D", "CR", "P", "N"].includes(releasedGrade) && (
+            <p class="muted small">
+              Your assessment marks add up to {fmtMark(view.mark)} ({gradeForMark(view.mark)}), but your released grade is{" "}
+              {releasedGrade}. Final marks are often scaled; the released grade is the one that counts.
+            </p>
+          )
+      }
+      {
+        !releasedGrade && (
+          <>
+            {trackingGrade && standing.averageSoFar !== null ? (
+              <p>
+                <GradeBadge grade={trackingGrade} tracking /> You're averaging <strong>{fmtPercent(standing.averageSoFar)}</strong> on
+                the {fmtPercent(standing.weightMarked)} of the course released so far.
+              </p>
+            ) : (
+              <p class="muted">No marks released yet.</p>
             )}
-          </div>
-        </form>
+            {standing.totalWeight > 0 && (
+              <>
+                <div
+                  class="progress"
+                  role="img"
+                  aria-label={`${fmtMark(standing.secured)} marks banked, ${fmtMark(lost)} lost, ${fmtMark(standing.weightRemaining)} still to come`}
+                >
+                  <span class="secured" style={`width:${standing.secured}%`} />
+                  <span class="remaining" style={`left:${standing.weightMarked}%;width:${standing.weightRemaining}%`} />
+                </div>
+                <ul class="legend" style="margin-bottom:1rem">
+                  <li><i style="background:var(--good)" />{fmtMark(standing.secured)} banked</li>
+                  <li><i style="background:transparent" />{fmtMark(lost)} lost</li>
+                  <li><i style="background:oklch(0.2 0.01 73 / 16%)" />{fmtMark(standing.weightRemaining)} to come</li>
+                </ul>
+              </>
+            )}
+            <p id="target">
+              {target === null && "Set a target to see what you need on the rest."}
+              {needed?.status === "possible" && (
+                <>
+                  <strong>Target {targetLabel}.</strong> You need <strong>{fmtPercent(needed.neededPercent!)}</strong> on average
+                  across the {fmtPercent(standing.weightRemaining)} still to come.
+                </>
+              )}
+              {needed?.status === "secured" && (
+                <>
+                  <strong>Target {targetLabel}: locked in.</strong> You've banked {fmtMark(standing.secured)} marks, so you reach it
+                  even with zero on the rest.
+                </>
+              )}
+              {needed?.status === "out-of-reach" && (
+                <>
+                  <strong>Target {targetLabel}: out of reach.</strong> Full marks on the rest gets you to{" "}
+                  {fmtMark(standing.maxPossible)} at most.
+                </>
+              )}
+              {needed?.status === "finished" && (
+                <>
+                  <strong>Target {targetLabel}.</strong> Everything's marked: you finished on {fmtMark(standing.secured)}.
+                </>
+              )}
+            </p>
+            <details class="disclose" open={target === null}>
+              <summary>{target === null ? "Set a target" : "Change target"}</summary>
+              <form method="post" action={`/api/courses/${course.id}`}>
+                <input type="hidden" name="_action" value="target" />
+                <fieldset class="chips">
+                  <legend>Aim for</legend>
+                  {presets.map(([g, m]) => (
+                    <label>
+                      <input type="radio" name="target" value={m} checked={target === m} />
+                      <span>
+                        {g} ({m}+)
+                      </span>
+                    </label>
+                  ))}
+                  <label>
+                    <input type="radio" name="target" value="" checked={target === null} />
+                    <span>No target</span>
+                  </label>
+                </fieldset>
+                <Field
+                  id="custom-target"
+                  label="Or a specific mark"
+                  name="customTarget"
+                  type="number"
+                  inputmode="decimal"
+                  step="any"
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 75"
+                  hint="Overrides the choice above."
+                  value={target !== null && !isPreset ? String(target) : undefined}
+                />
+                <button type="submit">Save target</button>
+              </form>
+            </details>
+          </>
+        )
+      }
+    </section>
 
-        {scenario && (
+    <section aria-labelledby="assessments-heading" id="what-if">
+      <h2 id="assessments-heading">Assessment</h2>
+      {course.assessments.length === 0 && <p class="muted">Your convenor hasn't set up the assessment yet.</p>}
+      {
+        canWhatIf && (
+          <p class="small muted" style="margin-top:-0.5rem">
+            Try marks for what's still to come to see where you'd land. Nothing you try is saved or sent to your convenor.
+          </p>
+        )
+      }
+      <form method="get" action={`${self}#what-if`}>
+        <ul class="item-list">
+          {course.assessments.map((a) => (
+            <li>
+              <div class="item-box">
+                <div class="item-top">
+                  <div>
+                    <div class="item-name">{a.name}</div>
+                    <div class="item-sub">
+                      {fmtMark(a.weight)}% of course
+                      {a.score === null && <> · {a.released ? "No mark" : "Not released"}</>}
+                    </div>
+                  </div>
+                  {a.score !== null && (
+                    <div class="item-score">
+                      {fmtMark(a.score)} / {fmtMark(a.outOf)}
+                      <span>{fmtPercent(percentage(a.score, a.outOf))}</span>
+                    </div>
+                  )}
+                </div>
+                {a.score === null && needed?.status === "possible" && (
+                  <div class="item-sub">
+                    Need {neededScore(needed.neededPercent!, a.outOf)} / {fmtMark(a.outOf)} for your target
+                  </div>
+                )}
+                {a.score === null && canWhatIf && (
+                  <div class="field">
+                    <label for={`w-${a.id}`}>Try a mark</label>
+                    <div class="try-input">
+                      <input
+                        id={`w-${a.id}`}
+                        name={`w${a.id}`}
+                        type="number"
+                        inputmode="decimal"
+                        step="any"
+                        min="0"
+                        max={String(a.outOf)}
+                        value={overrides.has(a.id) ? String(overrides.get(a.id)) : undefined}
+                      />
+                      <span>/ {fmtMark(a.outOf)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        {
+          canWhatIf && (
+            <div class="actions" style="margin-top:1rem">
+              <button type="submit">Work it out</button>
+              {scenario && <a href={self}>Clear</a>}
+            </div>
+          )
+        }
+      </form>
+
+      {
+        scenario && (
           <div class="scenario" role="status">
             <h3>With those marks</h3>
             {scenario.mark !== null && scenario.grade !== null ? (
               <>
                 <p>
-                  You'd finish on <strong>{fmtMark(scenario.mark)}</strong> <GradeBadge grade={scenario.grade} />{" "}
+                  You'd finish on <strong>{fmtMark(scenario.mark)}</strong> <GradeBadge grade={scenario.grade} tracking />{" "}
                   {GRADE_NAMES[scenario.grade]}.
                 </p>
                 <p>
@@ -188,11 +245,11 @@ const self = `/courses/${course.id}/`;
                   )}
                   .
                 </p>
-                {course.targetMark !== null && (
+                {target !== null && (
                   <p class="small">
-                    {scenario.mark >= course.targetMark
-                      ? `That meets your target of ${fmtMark(course.targetMark)}.`
-                      : `That's ${fmtMark(course.targetMark - scenario.mark)} short of your target of ${fmtMark(course.targetMark)}.`}
+                    {scenario.mark >= target
+                      ? `That meets your target of ${fmtMark(target)}.`
+                      : `That's ${fmtMark(target - scenario.mark)} short of your target of ${fmtMark(target)}.`}
                   </p>
                 )}
               </>
@@ -200,13 +257,12 @@ const self = `/courses/${course.id}/`;
               <>
                 <p>
                   You'd have <strong>{fmtMark(scenario.standing.secured)}</strong> marks banked, averaging{" "}
-                  {fmtPercent(scenario.standing.averageSoFar ?? 0)}, with {fmtPercent(scenario.standing.weightRemaining)}{" "}
-                  of the course still to come.
+                  {fmtPercent(scenario.standing.averageSoFar ?? 0)}, with {fmtPercent(scenario.standing.weightRemaining)} of the
+                  course still to come.
                 </p>
                 {scenario.needed?.status === "possible" && (
                   <p>
-                    To reach your target of {fmtMark(scenario.needed.target)} you'd then need{" "}
-                    <strong>{fmtPercent(scenario.needed.neededPercent!)}</strong> on the rest.
+                    To reach your target you'd then need <strong>{fmtPercent(scenario.needed.neededPercent!)}</strong> on the rest.
                   </p>
                 )}
                 {scenario.needed?.status === "secured" && <p>That would lock in your target.</p>}
@@ -215,57 +271,25 @@ const self = `/courses/${course.id}/`;
               </>
             )}
           </div>
-        )}
-      </section>
-    )
-  }
-
-  {
-    !releasedGrade && (
-      <section class="card" id="target" aria-labelledby="target-heading">
-        <h2 id="target-heading">Your target</h2>
-        <form method="post" action={`/api/courses/${course.id}`}>
-          <input type="hidden" name="_action" value="target" />
-          <fieldset class="chips">
-            <legend>Aim for</legend>
-            {presets.map(([g, m]) => (
-              <label>
-                <input type="radio" name="target" value={m} checked={course.targetMark === m} />
-                <span>
-                  {g} ({m}+)
-                </span>
-              </label>
-            ))}
-            <label>
-              <input type="radio" name="target" value="" checked={course.targetMark === null} />
-              <span>No target</span>
-            </label>
-          </fieldset>
-          <Field
-            id="custom-target"
-            label="Or a specific mark"
-            name="customTarget"
-            type="number"
-            inputmode="decimal"
-            step="any"
-            min="0"
-            max="100"
-            placeholder="e.g. 75"
-            hint="Overrides the choice above."
-            value={course.targetMark !== null && !isPreset ? String(course.targetMark) : undefined}
-          />
-          <button type="submit">Save target</button>
-        </form>
-      </section>
-    )
-  }
-
-  {releasedGrade && (
-    <section class="card">
-      <h2>This course is finished</h2>
-      <p class="small">Its grade is released, so there's nothing left to plan here. Try the <a href="/planner/">GPA planner</a> for your remaining semesters.</p>
+        )
+      }
     </section>
-  )}
-  </div>
+
+    {
+      !releasedGrade && (
+        <details class="section-gap">
+          <summary>How this is worked out</summary>
+          <p class="small muted">
+            Each item counts for its weight: a mark of 15/20 on a 15% item banks 11.25 course marks. "Need" is the average
+            percentage across everything not yet released that lands you on your target; doing better on one item lets you do
+            worse on another. It assumes the weights add up to 100% and every item is marked out of its full weight. Hurdles,
+            scaling and rounding are up to your convenor, and the released grade is what counts.
+          </p>
+          {!standing.weightsSumTo100 && standing.totalWeight > 0 && (
+            <p class="small muted">This course's weights add up to {fmtMark(standing.totalWeight)}%, not 100%.</p>
+          )}
+        </details>
+      )
+    }
   </div>
 </Layout>

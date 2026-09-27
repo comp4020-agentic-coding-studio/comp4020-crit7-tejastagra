@@ -1,7 +1,10 @@
 ---
-// One course in a list: the whole card links to its breakdown.
+// One course as a box: code, title, one meta line, and the grade badge on
+// the right (solid = released, dashed = tracking). Used on the dashboard
+// and in the archive, so both read the same way.
 import type { CourseView } from "../lib/record";
-import { fmtPercent } from "../lib/format";
+import { fmtMark, fmtPercent } from "../lib/format";
+import { gradeForMark } from "../lib/grading";
 import GradeBadge from "./GradeBadge.astro";
 
 interface Props {
@@ -9,17 +12,18 @@ interface Props {
   showNeeded?: boolean;
 }
 const { view, showNeeded = false } = Astro.props;
-const { course, releasedGrade, trackingGrade, needed, standing } = view;
+const { course, releasedGrade, trackingGrade, needed } = view;
 
+// for an in-progress course, the line says what the "need" is for
 let meta = `${course.units} units`;
-if (view.inProgress) {
-  meta += standing.averageSoFar === null ? " · nothing marked yet" : ` · ${fmtPercent(standing.averageSoFar)} so far`;
-}
-let neededLine: string | null = null;
-if (showNeeded && needed) {
-  if (needed.status === "possible") neededLine = `Need ${fmtPercent(needed.neededPercent!)} on the rest`;
-  else if (needed.status === "secured") neededLine = "Target secured";
-  else neededLine = "Target out of reach";
+if (showNeeded && view.inProgress) {
+  if (course.targetMark === null) meta = "No target set";
+  else {
+    const target = `Target ${gradeForMark(course.targetMark)} (${fmtMark(course.targetMark)})`;
+    if (needed?.status === "possible") meta = `${target} · need ${fmtPercent(needed.neededPercent!)} on the rest`;
+    else if (needed?.status === "secured") meta = `${target} · secured`;
+    else meta = `${target} · out of reach`;
+  }
 }
 ---
 
@@ -28,7 +32,7 @@ if (showNeeded && needed) {
     <span class="info">
       <span class="code">{course.code}</span>
       <span class="title">{course.title}</span>
-      <span class="meta">{meta}{neededLine && <> · <strong>{neededLine}</strong></>}</span>
+      <span class="meta">{meta}</span>
     </span>
     {releasedGrade && <GradeBadge grade={releasedGrade} />}
     {!releasedGrade && trackingGrade && <GradeBadge grade={trackingGrade} tracking />}

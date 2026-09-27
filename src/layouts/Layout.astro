@@ -28,7 +28,7 @@ const links = user?.role === "staff"
   : user
   ? [
       { href: "/", label: "Dashboard", current: path === "/" },
-      { href: "/archive/", label: "Archive", current: path.startsWith("/archive") || path.startsWith("/courses") },
+      { href: "/archive/", label: "Archive", current: path.startsWith("/archive") },
       { href: "/planner/", label: "Planner", current: path.startsWith("/planner") },
       { href: "/readme/", label: "About", current: path.startsWith("/readme") },
     ]
@@ -63,13 +63,13 @@ const links = user?.role === "staff"
   <body data-signed-in={user ? "" : undefined}>
     <header>
       <div class="site-header">
-        <nav class:list={["wrap", { "nav-collapsible": user?.role === "student" }]} aria-label="Main">
+        <nav class:list={["wrap", { "nav-collapsible": !!user }]} aria-label="Main">
           <a class="lockup" href="/">
             <Crest />
             <span>ANU<span class="slash">/</span>Grades</span>
           </a>
           {
-            user?.role === "student" && (
+            user && (
               <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="nav-links">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M4 7h16M4 12h16M4 17h16" />
@@ -116,7 +116,7 @@ const links = user?.role === "staff"
     {
       user && (
         <div class="sync-banner" role="status" hidden>
-          <span>{user.role === "staff" ? "This course changed in another tab." : "Your results have changed."}</span>
+          <span>{user.role === "staff" ? "Something changed in another tab." : "Your results have changed."}</span>
           <button type="button" data-refresh>
             Refresh
           </button>

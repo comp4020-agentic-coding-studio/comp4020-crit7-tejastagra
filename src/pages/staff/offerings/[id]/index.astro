@@ -1,14 +1,13 @@
 ---
-// One offering, for its convenor: the assessment items (and whether each is
-// released), the class list with final marks and grades, enrolment, and the
-// offering's details.
-import Field from "../../../../components/Field.astro";
-
+// One offering, for its convenor (UI/UX review): the assessment items are
+// the page, as boxes saying what needs marking or releasing. Final grades
+// and course details sit behind disclosures; the class list has its own
+// page.
 import ItemFields from "../../../../components/staff/ItemFields.astro";
 import OfferingForm from "../../../../components/staff/OfferingForm.astro";
 import Layout from "../../../../layouts/Layout.astro";
 import { getOffering, scoreKey } from "../../../../lib/data";
-import { fmtMark } from "../../../../lib/format";
+import { fmtMark, fmtPercent } from "../../../../lib/format";
 import { ALL_GRADES, courseStanding, finalMark, gradeForMark } from "../../../../lib/grading";
 import { termLabel } from "../../../../lib/record";
 
@@ -17,205 +16,166 @@ const offering = getOffering(staff.id, Number(Astro.params.id));
 if (!offering) return new Response("Course not found", { status: 404 });
 
 const base = `/api/staff/offerings/${offering.id}`;
+const page = `/staff/offerings/${offering.id}`;
+const students = offering.enrolments.length;
 const totalWeight = offering.items.reduce((n, i) => n + i.weight, 0);
 const markedCount = (itemId: number) => offering.enrolments.filter((e) => offering.scores.has(scoreKey(itemId, e.id))).length;
 const rows = offering.enrolments.map((e) => {
   const items = offering.items.map((i) => ({ weight: i.weight, outOf: i.outOf, score: offering.scores.get(scoreKey(i.id, e.id)) ?? null }));
   const mark = finalMark(items);
-  return { e, mark, suggested: mark === null ? null : gradeForMark(mark), standing: courseStanding(items) };
+  return { e, mark, standing: courseStanding(items) };
 });
+const graded = offering.enrolments.filter((e) => e.grade).length;
+const allMarked = students > 0 && offering.items.length > 0 && offering.items.every((i) => markedCount(i.id) === students);
 ---
 
 <Layout title={`${offering.code} (staff)`}>
   <p class="small"><a href="/staff/">← My courses</a></p>
   <h1>{offering.code}</h1>
-  <p class="lede" style="margin-bottom:0.25rem">{offering.title}</p>
-  <p class="muted small">{termLabel(offering.term, offering.year)} · {offering.units} units · {offering.enrolments.length} students</p>
+  <p class="lede">
+    {offering.title} · {termLabel(offering.term, offering.year)} · {offering.units} units ·{" "}
+    <a href={`${page}/students/`}>{students} students</a>
+  </p>
 
-  <div class="split split-even" style="margin-top:1.5rem">
   <section id="items" aria-labelledby="items-heading">
-    <h2 id="items-heading" style="margin-top:0">Assessment</h2>
-    {offering.items.length === 0 && <p class="muted">No assessment items yet. Add them from the class summary below.</p>}
+    <h2 id="items-heading">Assessment</h2>
+    {offering.items.length === 0 && <p class="muted">No assessment items yet. Add them from the class summary.</p>}
+    <ul class="item-list">
+      {
+        offering.items.map((i) => {
+          const marked = markedCount(i.id);
+          return (
+            <li>
+              <a class="item-box" href={`${page}/items/${i.id}/`}>
+                <div class="item-top">
+                  <div class="item-name">{i.name}</div>
+                  <span class:list={["status", i.released ? "status-on" : "status-off"]}>
+                    {i.released ? "Released" : "Not released"}
+                  </span>
+                </div>
+                <div class="item-sub">
+                  {fmtMark(i.weight)}% · out of {fmtMark(i.outOf)}
+                </div>
+                <div class="small">
+                  {marked < students ? (
+                    <strong>
+                      {marked} of {students} marked
+                    </strong>
+                  ) : (
+                    <>
+                      {marked} of {students} marked
+                    </>
+                  )}
+                </div>
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
     {
-      offering.items.length > 0 && (
-        <div class="table-wrap">
-          <table>
+      offering.items.length > 0 && Math.abs(totalWeight - 100) > 0.01 && (
+        <p class="small muted" style="margin-top:0.75rem">Weights add up to {fmtMark(totalWeight)}%. Students' what-ifs assume 100%.</p>
+      )
+    }
+    <details class="disclose" id="add-item" style="margin-top:1rem" open={offering.items.length === 0}>
+      <summary>Add an item</summary>
+      <div class="card narrow" style="margin:0">
+        <form method="post" action={base}>
+          <input type="hidden" name="_action" value="add-item" />
+          <ItemFields idPrefix="add" />
+          <button type="submit">Add item</button>
+        </form>
+      </div>
+    </details>
+  </section>
+
+  <details class="section section-gap" id="students" open={allMarked && graded < students}>
+    <summary>
+      Final grades <span class="muted">· {graded} of {students} set</span>
+    </summary>
+    {students === 0 && <p class="muted">Nobody is enrolled yet. <a href={`${page}/students/`}>Add students</a>.</p>}
+    {
+      students > 0 && (
+        <form method="post" action={base} class="one-col">
+          {/* a table on purpose: one grade select per student, in one tab order (visual-design.md) */}
+          <table class="rows">
             <thead>
               <tr>
-                <th scope="col">Item</th>
-                <th scope="col" class="num">Weight</th>
-                <th scope="col" class="num">Marked</th>
-                <th scope="col">Status</th>
+                <th scope="col">Student</th>
+                <th scope="col" class="num">Course mark</th>
+                <th scope="col">Grade</th>
               </tr>
             </thead>
             <tbody>
-              {offering.items.map((i) => (
+              {rows.map(({ e, mark, standing }) => (
                 <tr>
                   <td class="course-cell">
-                    <a href={`/staff/offerings/${offering.id}/items/${i.id}/`}>{i.name}</a>
-                    <span>out of {fmtMark(i.outOf)}</span>
+                    <strong>{e.name}</strong>
+                    <span>{e.uniId}</span>
                   </td>
-                  <td class="num">{fmtMark(i.weight)}%</td>
                   <td class="num">
-                    {markedCount(i.id)}/{offering.enrolments.length}
+                    {mark !== null ? (
+                      <>
+                        {fmtMark(mark)} <span class="muted small">({gradeForMark(mark)})</span>
+                      </>
+                    ) : standing.averageSoFar !== null ? (
+                      <span class="small">
+                        Averaging {fmtPercent(standing.averageSoFar)}
+                        <span class="muted" style="display:block">
+                          {fmtPercent(standing.weightMarked)} marked
+                        </span>
+                      </span>
+                    ) : (
+                      <span class="muted small">Nothing marked</span>
+                    )}
                   </td>
                   <td>
-                    <span class:list={["status", i.released ? "status-on" : "status-off"]}>{i.released ? "Released" : "Hidden"}</span>
+                    <label class="visually-hidden" for={`grade-${e.id}`}>
+                      Final grade for {e.name}
+                    </label>
+                    <select id={`grade-${e.id}`} name={`grade-${e.id}`} class="compact">
+                      <option value="" selected={!e.grade}>
+                        Not set
+                      </option>
+                      {ALL_GRADES.map((g) => (
+                        <option value={g} selected={e.grade === g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )
-    }
-    {
-      offering.items.length > 0 && Math.abs(totalWeight - 100) > 0.01 && (
-        <p class="small muted">Weights add up to {fmtMark(totalWeight)}%. Students' what-ifs assume 100%.</p>
-      )
-    }
-    <section class="card" id="add-item" aria-labelledby="add-item-heading" style="margin-top:1.5rem">
-      <details open={offering.items.length === 0}>
-        <summary><h3 id="add-item-heading">Add an assessment item</h3></summary>
-        <form method="post" action={base}>
-          <input type="hidden" name="_action" value="add-item" />
-          <ItemFields idPrefix="add" />
-          <button type="submit" class="button-block">Add item</button>
-        </form>
-      </details>
-    </section>
-  </section>
-
-  <section id="students" aria-labelledby="students-heading">
-    <h2 id="students-heading" style="margin-top:0">Students and final grades</h2>
-    {offering.enrolments.length === 0 && <p class="muted">Nobody is enrolled yet.</p>}
-    {
-      offering.enrolments.length > 0 && (
-        <form method="post" action={base}>
-          <input type="hidden" name="_action" value="save-grades" />
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Student</th>
-                  <th scope="col" class="num">Mark</th>
-                  <th scope="col">Grade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(({ e, mark, suggested, standing }) => (
-                  <tr>
-                    <td class="course-cell">
-                      <strong>{e.name}</strong>
-                      <span>{e.uniId}</span>
-                    </td>
-                    <td class="num">
-                      {mark !== null ? (
-                        <>
-                          {fmtMark(mark)}
-                          {suggested && <span class="muted small" style="display:block">{suggested}</span>}
-                        </>
-                      ) : (
-                        <span class="muted small">{fmtMark(standing.weightMarked)}% marked</span>
-                      )}
-                    </td>
-                    <td>
-                      <label class="visually-hidden" for={`grade-${e.id}`}>
-                        Final grade for {e.name}
-                      </label>
-                      <select id={`grade-${e.id}`} name={`grade-${e.id}`} class="compact">
-                        <option value="" selected={!e.grade}>
-                          Not set
-                        </option>
-                        {ALL_GRADES.map((g) => (
-                          <option value={g} selected={e.grade === g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p class="alert alert-info small" style="margin:0.5rem 0 1rem">
+            <strong>Students see a final grade as soon as you save it.</strong> There's no separate release step for grades.
+          </p>
           <div class="actions">
-            <button type="submit">Save grades</button>
+            <button type="submit" name="_action" value="save-grades">
+              Save grades
+            </button>
+            <button type="submit" name="_action" value="fill-grades" class="button-secondary">
+              Fill empty grades from marks
+            </button>
           </div>
-        </form>
-      )
-    }
-    {
-      offering.enrolments.length > 0 && (
-        <form method="post" action={base} style="margin-top:0.75rem">
-          <input type="hidden" name="_action" value="fill-grades" />
-          <button type="submit" class="button-secondary">Fill empty grades from marks</button>
-          <p class="muted small" style="margin-top:0.4rem">
-            Sets HD/D/CR/P/N from the course mark for anyone fully marked without a grade. Students see a grade as soon as
-            it's set.
+          <p class="muted small" style="margin-top:0.5rem">
+            "Fill" sets HD/D/CR/P/N from the course mark for anyone fully marked without a grade.
           </p>
         </form>
       )
     }
+  </details>
 
-  </section>
-  </div>
-
-  <h2 id="enrol-heading-main">Class list</h2>
-  <div class="grid-3" id="enrol">
-      <section class="card" aria-labelledby="enrol-heading">
-        <h3 id="enrol-heading">Enrol a student</h3>
-        <form method="post" action={base}>
-          <input type="hidden" name="_action" value="enrol" />
-          <Field id="enrol-uni" label="Uni ID" name="uniId" required pattern="[uU][0-9]{7}" autocapitalize="none" placeholder="u1234567" />
-          <Field id="enrol-name" label="Name" name="name" required maxlength="80" />
-          <button type="submit">Enrol</button>
-        </form>
-      </section>
-      <section class="card" aria-labelledby="enrol-csv-heading">
-        <h3 id="enrol-csv-heading">Upload a class list</h3>
-        <form method="post" action={base} enctype="multipart/form-data">
-          <input type="hidden" name="_action" value="enrol-csv" />
-          <Field id="roster-file" label="CSV file" name="file" type="file" accept=".csv,text/csv,text/plain" hint="Columns: uni_id, name. A header row is fine." />
-          <div class="field">
-            <label for="roster-csv">Or paste it</label>
-            <textarea id="roster-csv" name="csv" rows="4" placeholder="u1234567,Priya Nair"></textarea>
-          </div>
-          <button type="submit">Upload class list</button>
-        </form>
-      </section>
-    {
-      offering.enrolments.length > 0 && (
-        <section class="card" aria-labelledby="remove-heading">
-          <h3 id="remove-heading">Remove a student</h3>
-          <form method="post" action={base} class="inline-form">
-            <input type="hidden" name="_action" value="unenrol" />
-            <div class="field">
-              <label for="remove-who">Student</label>
-              <select id="remove-who" name="enrolmentId" required>
-                <option value="">Choose…</option>
-                {offering.enrolments.map((e) => (
-                  <option value={e.id}>
-                    {e.name} ({e.uniId})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" class="button-danger">Remove</button>
-          </form>
-        </section>
-      )
-    }
-  </div>
-
-  <section class="card" id="details" aria-labelledby="details-heading" style="margin-top:1.5rem">
-    <details>
-      <summary><h2 id="details-heading">Course details</h2></summary>
+  <details class="section section-gap" id="details">
+    <summary>Course details</summary>
+    <div class="card narrow" style="margin:0">
       <OfferingForm action={base} offering={offering} submitLabel="Save details" idPrefix="edit" />
-      <form method="post" action={base} style="margin-top:1rem">
-        <input type="hidden" name="_action" value="delete" />
-        <button type="submit" class="button-danger button-block">Delete {offering.code} with all its marks</button>
-      </form>
-    </details>
-  </section>
+    </div>
+    <form method="post" action={base} class="narrow" style="margin:1rem 0 0">
+      <input type="hidden" name="_action" value="delete" />
+      <button type="submit" class="button-danger button-block">Delete {offering.code} with all its marks</button>
+    </form>
+  </details>
 </Layout>

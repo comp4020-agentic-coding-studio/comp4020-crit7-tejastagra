@@ -1,6 +1,7 @@
 ---
-// A convenor's courses, newest session first, with what's left to do in
-// each: items to release, grades to set.
+// A convenor's courses: this session's offerings first, as boxes that say
+// what's left to do; past offerings behind one disclosure (UI/UX review).
+import OfferingCard from "../../components/staff/OfferingCard.astro";
 import OfferingForm from "../../components/staff/OfferingForm.astro";
 import Layout from "../../layouts/Layout.astro";
 import { isDemoAccount, listOfferings } from "../../lib/data";
@@ -15,63 +16,61 @@ const sessions = [...new Set(offerings.map((o) => `${o.year}-${o.term}`))].map((
   const list = offerings.filter((o) => `${o.year}-${o.term}` === key);
   return { key, label: termLabel(list[0].term, list[0].year), list };
 });
+const [latest, ...past] = sessions;
+const pastCount = past.reduce((n, s) => n + s.list.length, 0);
 ---
 
 <Layout title="My courses">
   <h1>My courses</h1>
   <p class="lede">Hi, {staff.name}. Set up assessment, upload marks, and release results to your students.</p>
 
-  {offerings.length === 0 && <p class="muted">You don't convene any courses yet. Create one below.</p>}
-  <div class="grid-auto">
+  {offerings.length === 0 && <p class="muted">You don't convene any courses yet.</p>}
+
   {
-    sessions.map((s) => (
-      <section aria-labelledby={`s-${s.key}`}>
-        <div class="table-head"><h2 id={`s-${s.key}`}>{s.label}</h2></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Course</th>
-                <th scope="col" class="num">Students</th>
-                <th scope="col" class="num">Released</th>
-                <th scope="col" class="num">Graded</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.list.map((o) => (
-                <tr>
-                  <td class="course-cell">
-                    <a href={`/staff/offerings/${o.id}/`}>{o.code}</a>
-                    <span>{o.title}</span>
-                  </td>
-                  <td class="num">{o.students}</td>
-                  <td class="num">
-                    {o.released}/{o.items}
-                  </td>
-                  <td class="num">
-                    {o.graded}/{o.students}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    latest && (
+      <section aria-labelledby="current-heading">
+        <h2 id="current-heading">{latest.label}</h2>
+        <ul class="course-list">
+          {latest.list.map((o) => (
+            <OfferingCard offering={o} />
+          ))}
+        </ul>
       </section>
-    ))
+    )
   }
-  </div>
-  <div class="narrow" style="margin:2rem 0 0">
-  <section class="card" id="new-offering" aria-labelledby="new-heading">
-    <h2 id="new-heading">Create a course offering</h2>
-    <OfferingForm action="/api/staff/offerings" submitLabel="Create offering" idPrefix="new" />
-  </section>
+
+  <details class="disclose section-gap" id="new-offering" open={offerings.length === 0}>
+    <summary>New course offering</summary>
+    <div class="card narrow" style="margin:0">
+      <OfferingForm action="/api/staff/offerings" submitLabel="Create offering" idPrefix="new" />
+    </div>
+  </details>
+
+  {
+    past.length > 0 && (
+      <details class="section section-gap">
+        <summary>
+          Past offerings <span class="muted">({pastCount})</span>
+        </summary>
+        {past.map((s) => (
+          <section aria-labelledby={`s-${s.key}`} style="margin-top:1rem">
+            <h3 id={`s-${s.key}`}>{s.label}</h3>
+            <ul class="course-list">
+              {s.list.map((o) => (
+                <OfferingCard offering={o} />
+              ))}
+            </ul>
+          </section>
+        ))}
+      </details>
+    )
+  }
 
   {
     isDemoAccount(staff.uniId) && (
-      <form method="post" action="/api/demo/reset" class="small muted" style="margin-top:1.5rem">
+      <form method="post" action="/api/demo/reset" class="small muted section-gap">
         This is the shared demo account. <button type="submit" class="link-button">Reset demo data</button>
       </form>
     )
   }
-  </div>
 </Layout>

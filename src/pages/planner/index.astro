@@ -1,13 +1,15 @@
 ---
-// The GPA planner: set a target GPA and see what the rest of the degree
-// has to average to get there.
+// The GPA planner: set a target GPA and see what the rest of the degree has
+// to average. One result, one scale (UI/UX review): the needed average is
+// grade points per unit; the career-GPA range is labelled as a different
+// quantity so the two don't read as contradicting each other.
 import Field from "../../components/Field.astro";
 import GradeBadge from "../../components/GradeBadge.astro";
 import Stat from "../../components/Stat.astro";
 import Layout from "../../layouts/Layout.astro";
 import { listStudentCourses } from "../../lib/data";
 import { fmtGpa, plural } from "../../lib/format";
-import type { GradeMix, PlanResult } from "../../lib/grading";
+import type { GradeMix } from "../../lib/grading";
 import { summarise } from "../../lib/record";
 
 const student = Astro.locals.user!;
@@ -28,28 +30,7 @@ function describeAverage(avg: number): string {
 function mixLine(mix: GradeMix): { grade: string; courses: number }[] {
   return [mix.higher, ...(mix.lower ? [mix.lower] : [])];
 }
-
-type Scenario = PlanResult & { remainingUnits: number; mix: GradeMix | null };
-const scenarios: { key: string; title: string; intro: string; s: Scenario }[] = [];
-if (plan) {
-  scenarios.push({
-    key: "all",
-    title: "Across everything left",
-    intro: `Your remaining ${plural(plan.remainingUnits, "unit")}, this semester included.`,
-    s: plan,
-  });
-  if (plan.afterTargets) {
-    scenarios.push({
-      key: "targets",
-      title: "If you hit this semester's course targets",
-      intro:
-        plan.afterTargets.remainingUnits > 0
-          ? `Then your other ${plural(plan.afterTargets.remainingUnits, "unit")} (anything without a target yet) need:`
-          : "That's the last of your units.",
-      s: plan.afterTargets,
-    });
-  }
-}
+const after = plan?.afterTargets;
 ---
 
 <Layout title="GPA planner">
@@ -58,113 +39,109 @@ if (plan) {
       <h1>GPA planner</h1>
       <p class="lede">Set the GPA you're aiming for and see what the rest of your degree needs to average.</p>
     </div>
-    <dl class="stats stats-2">
+    <dl class="stats stats-1">
       <Stat label="Career GPA" value={fmtGpa(summary.gpa)} note={`over ${summary.gpaUnits} units`} />
-      <Stat label="Units left" value={String(summary.remainingUnits)} note={`of a ${summary.degreeUnits}-unit degree`} />
     </dl>
   </div>
+
   <div class="split split-even">
-  <div class="col">
+    <section class="card" aria-labelledby="goal-heading">
+      <h2 id="goal-heading">Your goal</h2>
+      <form method="post" action="/api/plan">
+        <div class="row">
+          <Field
+            id="target-gpa"
+            label="Target GPA"
+            name="targetGpa"
+            type="number"
+            inputmode="decimal"
+            step="0.001"
+            min="0"
+            max="7"
+            placeholder="e.g. 6"
+            value={student.targetGpa === null ? undefined : String(student.targetGpa)}
+            hint="Out of 7. Blank clears it."
+          />
+          <Field
+            id="degree-units"
+            label="Units in your degree"
+            name="degreeUnits"
+            type="number"
+            inputmode="numeric"
+            min="6"
+            max="600"
+            required
+            value={String(student.degreeUnits)}
+            hint="144 for most 3-year bachelors."
+          />
+        </div>
+        <button type="submit">Save goal</button>
+      </form>
+    </section>
 
-  <section class="card" aria-labelledby="goal-heading">
-    <h2 id="goal-heading">Your goal</h2>
-    <form method="post" action="/api/plan">
-      <div class="row">
-        <Field
-          id="target-gpa"
-          label="Target GPA"
-          name="targetGpa"
-          type="number"
-          inputmode="decimal"
-          step="0.001"
-          min="0"
-          max="7"
-          placeholder="e.g. 6"
-          value={student.targetGpa === null ? undefined : String(student.targetGpa)}
-          hint="Out of 7. Blank clears it."
-        />
-        <Field
-          id="degree-units"
-          label="Units in your degree"
-          name="degreeUnits"
-          type="number"
-          inputmode="numeric"
-          min="6"
-          max="600"
-          required
-          value={String(student.degreeUnits)}
-          hint="144 for most 3-year bachelors."
-        />
-      </div>
-      <button type="submit">Save goal</button>
-    </form>
-  </section>
-  </div>
-  <div class="col">
-
-  {
-    !plan && (
-      <p class="muted">Set a target GPA to see what you need from here.</p>
-    )
-  }
-
-  {
-    scenarios.map(({ key, title, intro, s }) => (
-      <section class="card" aria-labelledby={`plan-${key}`}>
-        <h2 id={`plan-${key}`}>
-          {title}
-        </h2>
-        <p class="muted small">{intro}</p>
-        {s.status === "possible" && s.neededAverage !== null && (
+    <section class="card" aria-labelledby="result-heading">
+      <h2 id="result-heading">What the rest of your degree needs</h2>
+      {!plan && <p class="muted">Set a target GPA to see what you need from here.</p>}
+      {
+        plan && (
           <>
-            <p class="big-number">{s.neededAverage.toFixed(2)}</p>
-            <p>
-              grade points per unit on average, which is {describeAverage(s.neededAverage)}.
-              {s.remainingUnits > 0 && (
-                <> That's about {plural(Math.ceil(s.remainingUnits / 24), "more semester")} at a full load.</>
-              )}
+            <p class="muted small">
+              {plural(plan.remainingUnits, "unit")} left, this semester included (about{" "}
+              {plural(plan.semestersLeft, "semester")} at a full load).
             </p>
-            {s.mix && (
+            {plan.status === "possible" && plan.neededAverage !== null && (
+              <>
+                <p class="big-number">{plan.neededAverage.toFixed(2)}</p>
+                <p>
+                  grade points per unit on average to reach {plan.target.toFixed(3)}. That's {describeAverage(plan.neededAverage)}
+                  {plan.mix && (
+                    <>
+                      , for example{" "}
+                      {mixLine(plan.mix).map((m, i) => (
+                        <>
+                          {i > 0 && " and "}
+                          {m.courses} × <GradeBadge grade={m.grade as never} tracking />
+                        </>
+                      ))}{" "}
+                      across 6-unit courses
+                    </>
+                  )}
+                  .
+                </p>
+              </>
+            )}
+            {plan.status === "secured" && (
               <p>
-                One way to get there with 6-unit courses:{" "}
-                {mixLine(s.mix).map((m, i) => (
-                  <>
-                    {i > 0 && " and "}
-                    <strong>{m.courses}</strong> × <GradeBadge grade={m.grade as never} />
-                  </>
-                ))}
-                .
+                <strong>Locked in.</strong> Even if the rest went badly you'd stay at or above {plan.target.toFixed(3)}.
+              </p>
+            )}
+            {plan.status === "out-of-reach" && (
+              <p>
+                <strong>{plan.target.toFixed(3)} is out of reach from here.</strong> Straight HDs would take your career GPA to{" "}
+                {fmtGpa(plan.bestPossible)}.
+              </p>
+            )}
+            {plan.status === "no-units" && <p>No units left to change your GPA.</p>}
+            {after && after.status === "possible" && after.neededAverage !== null && (
+              <p class="small">
+                If you hit this semester's course targets, your other {plural(after.remainingUnits, "unit")} would need{" "}
+                <strong>{after.neededAverage.toFixed(2)}</strong>.
+              </p>
+            )}
+            {after && after.status === "secured" && <p class="small">Hitting this semester's course targets would lock it in.</p>}
+            {plan.bestPossible !== null && plan.status !== "no-units" && (
+              <p class="muted small">
+                Your career GPA can finish anywhere from {fmtGpa(plan.worstPossible)} (all fails) to {fmtGpa(plan.bestPossible)} (all
+                HDs).
               </p>
             )}
           </>
-        )}
-        {s.status === "secured" && (
-          <p>
-            <strong>You've got this locked in.</strong> Even if the rest went badly, you'd stay at or above{" "}
-            {plan!.target.toFixed(3)}.
-          </p>
-        )}
-        {s.status === "out-of-reach" && (
-          <p>
-            <strong>Out of reach from here.</strong> Straight HDs would take you to {fmtGpa(s.bestPossible)}. Try a
-            target at or below that.
-          </p>
-        )}
-        {s.status === "no-units" && <p>No units left to change your GPA.</p>}
-        {s.bestPossible !== null && s.status !== "no-units" && (
-          <p class="muted small">
-            Range from here: {fmtGpa(s.worstPossible)} (all fails) to {fmtGpa(s.bestPossible)} (all HDs).
-          </p>
-        )}
-      </section>
-    ))
-  }
-
+        )
+      }
+    </section>
   </div>
-  </div>
-  <p class="muted small" style="margin-top:1.5rem">
-    Many grade mixes reach the same GPA, so this shows the average you need, not a single path. Grade points: HD 7,
-    D 6, CR 5, P 4, fail 0. Set course targets on each <a href="/archive/">in-progress course</a> to plan this
-    semester.
+  <p class="muted small section-gap">
+    Grade points: HD 7, D 6, CR 5, P 4, fail 0. Set course targets on each in-progress course from your
+    <a href="/">dashboard</a>.
   </p>
 </Layout>
