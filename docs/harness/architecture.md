@@ -77,9 +77,12 @@ e.g. 17/20); percentages are derived. Weights are percentages of the course.
   per enrolment and `target_gpa`/`degree_units`. There are no student
   endpoints that change results. Unreleased items look unmarked to a
   student, even if staff have entered marks.
-- Student self-registration exists only because this is a mock of ANU
-  login: registering claims a uni ID. A real deployment would use ANU's
-  single sign-on. Say so in the UI and README.
+- **No sign-up.** Accounts are provisioned by the university, not created
+  by whoever visits: anyone on the internet could otherwise claim a uni ID
+  and read that student's results. In this prototype accounts come from
+  the seed (the demo accounts and the classmates) or from
+  `scripts/add-user.ts` run against the database; a real deployment gets
+  them from ANU's single sign-on.
 
 ### What-if scenarios
 
@@ -90,16 +93,15 @@ overwrite, an official mark, and it works without JS.
 
 ## Auth
 
-Username (ANU uni id, e.g. u1234567) + password, hashed with scrypt from
-`node:crypto`. Sessions are random tokens in an httpOnly, SameSite=Lax cookie;
+Uni ID (e.g. u1234567) + password, hashed with scrypt from `node:crypto`. Sessions are random tokens in an httpOnly, SameSite=Lax cookie;
 only a SHA-256 of the token is stored. This is a mock of ANU login, not a
 replacement for it, and the UI says so. No new auth dependencies.
 
 Seeded demo accounts (see `src/lib/data/seed.ts`) let a visitor or tutor see
 both sides without typing anything in: a demo student with a full history,
-a demo convenor who runs all of that student's courses (with a handful of
-classmates in each), and a second convenor with no offerings, used to test
-staff scoping. The demo data is illustrative, not a real transcript.
+a demo convenor who runs all of that student's courses, seven classmates in
+each (with accounts too, so tests can log in as a second student), and a
+second convenor with no offerings, used to test staff scoping. The demo data is illustrative, not a real transcript.
 
 ## Live sync
 

@@ -23,7 +23,7 @@ rejected for exactly that reason.
 | `--divider` | `--text` at 12% | every border: cards, inputs, tables, footer rule |
 | `--gold` | `#b97d1c` | headings, current nav item, buttons, table header, hero underline |
 | `--link` | `oklch(0.536 0.127 73)` | links in text |
-| `--on-gold` | `oklch(0.16 0 73)` | text on gold (buttons, table header): dark, not white |
+| `--gold-fill` | `#9e6912` | fills with text on them (buttons, selected chips, table headers): one shade deeper than `--gold` so **white** text passes 4.5:1 (it's 4.68:1; white on `#b97d1c` is only 3.49:1) |
 | `--gold-soft` | gold at 10% | hover, selected, what-if result tint |
 | `--stripe` | gold at 6% | even table rows |
 
@@ -68,12 +68,13 @@ Radius 6.75px on inputs and buttons; **cards are square**.
 - **Header:** same background as the page, no bottom border; crest mark +
   "ANU / Grades" wordmark left, nav links right. Don't use ANU's real
   crest or logo: this is a prototype, not the official system.
-- **Nav contents:** logged out, only **Log in** and **About** (the lockup is
-  the way home). Students: Dashboard, Archive, Planner, About, Log out.
-  Staff: My courses, About, Log out.
+- **Nav contents:** logged out, nothing but the lockup (the page *is* the
+  login). Students: Dashboard, Archive, Planner, Log out. Staff: My
+  courses, Log out. The About page (`/readme/`, which the course spec
+  requires) is linked from the footer only.
 - **One login page** for everyone. The account's role decides where it
   lands (students to the dashboard, staff to My courses) and what the nav
-  shows. There is no separate staff login.
+  shows. There is no separate staff login and no sign-up.
 - **Logged-out `/`:** just the login, in a narrow centred card. No hero,
   no feature list.
 - **Boxes over tables.** Information is shown in boxes (the dashboard's
@@ -82,8 +83,10 @@ Radius 6.75px on inputs and buttons; **cards are square**.
   course boxes as "This semester", grouped by session. Use a table only
   where comparing many rows side by side is the job (e.g. staff typing
   marks for a whole class), and say why in a comment.
-- **Tables, where they're justified:** gold header row with dark text,
-  weight 700; striped rows; cells padded 9px 13.5px.
-- **Buttons:** gold fill with dark text, weight 600; secondary is a gold
-  outline with gold text.
+- **Tables, where they're justified:** `--gold-fill` header row with
+  white text, weight 700; striped rows; cells padded 9px 13.5px.
+- **Buttons:** `--gold-fill` with **white** text, weight 600 (the owner
+  rejected dark text on gold as poor UI; A2's exact gold can't carry white
+  text accessibly, hence the deeper fill). Secondary is a gold outline with
+  link-gold text.
 - **Footer:** a 1px divider rule, muted 0.875rem text.
